@@ -14,15 +14,12 @@
 //!
 //! Before continuing, it's important to understand a few concepts:
 //!
-//! - **Personally Identifiable Information (PII)**: Any data that can be used to identify an individual.
-//!   This includes names, email addresses, phone numbers, etc.
-//!
-//! - **Data Classification**: The process of tagging PII data with individual data classes.
-//!   Different data classes may have different rules for handling them. For example, some PII
-//!   can be put into logs, but only for a limited time, while other PII can never be logged.
+//! - **Data Classification**: The process of tagging sensitive data with individual data classes.
+//!   Different data classes may have different rules for handling them. For example, some sensitive
+//!   data can be put into logs, but only for a limited time, while other data can never be logged.
 //!
 //! - **Data Taxonomy**: A group of related data classes that together represent a consistent set
-//!   of rules for handling PII data. Different companies or governments usually have their own taxonomies.
+//!   of rules for handling sensitive data. Different companies or governments usually have their own taxonomies.
 //!
 //! - **Redaction**: The process of removing or obscuring sensitive information from data.
 //!   Redaction is often done by using consistent hashing, replacing the sensitive data with a hash
@@ -75,7 +72,7 @@
 //! use data_classification::{AsteriskRedactorMaker, Redact, RedactorMaker, Sensitive};
 //!
 //! struct Person {
-//!     name: Sensitive<String>, // a bit of PII we should not leak in logs
+//!     name: Sensitive<String>, // a bit of sensitive data we should not leak in logs
 //!     age: u32,
 //! }
 //!
