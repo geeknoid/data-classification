@@ -1,5 +1,5 @@
+use crate::Redactor;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
-use crate::{Redactor, RedactorMaker};
 
 const DEFAULT_SECRET_SIZE: usize = 192;
 const DEFAULT_SECRET: [u8; DEFAULT_SECRET_SIZE] = [
@@ -19,43 +19,38 @@ const DEFAULT_SECRET: [u8; DEFAULT_SECRET_SIZE] = [
 
 const REDACTED_LEN: usize = 16;
 
-#[allow(non_camel_case_types)] /// Produces redactors that replace the original string with the xxH3 hash of the string.
-pub struct xxH3RedactorMaker {
-    secret: Vec<u8>,
+#[allow(non_camel_case_types)]
+/// Produces redactors that replace the original string with the xxH3 hash of the string.
+pub struct xxH3Redactor {
+    secret: Box<[u8]>,
 }
 
-impl xxH3RedactorMaker {
+impl xxH3Redactor {
     /// Creates a new instance.
     #[must_use]
     pub fn new() -> Self {
         Self {
-            secret: DEFAULT_SECRET.to_vec(),
+            secret: DEFAULT_SECRET.to_vec().into_boxed_slice(),
         }
     }
 
     /// Creates a new instance with a custom secret.
-    /// 
+    ///
     /// The secret must be at least 16 bytes long and at most 256 bytes long.
     #[must_use]
-    pub fn with_secret(secret: &[u8]) -> Self{
+    pub fn with_secret(secret: impl AsRef<[u8]>) -> Self {
         Self {
-            secret: Vec::from(secret),
+            secret: secret.as_ref().to_vec().into_boxed_slice(),
         }
     }
 }
 
-impl<'a> RedactorMaker<'a> for xxH3RedactorMaker {
-    fn make_redactor<F>(&self, mut output: F) -> Redactor<'a>
-    where
-        F: FnMut(&str) + 'a,
-    {
-        // TODO: find a way to implement this function without allocations...
-        let secret = self.secret.clone();
-        Redactor::new(move |s| {
-            let hash = xxh3_64_with_secret(s.as_bytes(), &secret);
-            let s = format!("{hash:0>16x}");
-            (output)(s.as_str());
-        })
+impl Redactor for xxH3Redactor {
+    fn redact<'a>(&self, value: &str, output: Box<dyn FnOnce(&str) + 'a>) {
+        let hash = xxh3_64_with_secret(value.as_bytes(), &self.secret);
+        let buffer = u64_to_hex_array(hash);
+
+        output(unsafe { std::str::from_utf8_unchecked(&buffer) });
     }
 
     fn exact_len(&self) -> Option<usize> {
@@ -63,8 +58,21 @@ impl<'a> RedactorMaker<'a> for xxH3RedactorMaker {
     }
 }
 
-impl Default for xxH3RedactorMaker {
+impl Default for xxH3Redactor {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[inline]
+fn u64_to_hex_array(mut value: u64) -> [u8; 16] {
+    const HEX_LOWER_CHARS: &[u8; 16] = b"0123456789abcdef";
+
+    let mut buffer = [0u8; REDACTED_LEN];
+    for e in buffer.iter_mut().rev() {
+        *e = HEX_LOWER_CHARS[(value & 0x0f) as usize];
+        value >>= 4;
+    }
+
+    buffer
 }

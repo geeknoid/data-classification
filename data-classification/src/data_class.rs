@@ -25,50 +25,56 @@ macro_rules! data_class {
         pub struct $name<T> {
             payload: T,
         }
-        
+
         impl<T> $name<T> {
+            /// Creates a new instance of the data class.
             pub const fn new(payload: T) -> Self {
                 Self { payload }
             }
 
+            /// Returns the payload of the data class.
             pub fn exfiltrate(self) -> T {
                 self.payload
             }
         }
-        
-        impl<T> data_classification::Classified<T> for $name<T>
+
+        impl<T> data_classification::ClassifiedAccessor<T> for $name<T>
         where
             T: Clone,
         {
             fn exfiltrate(self) -> T {
                 self.payload
             }
-        
-            fn visit(&self, operation: impl Fn(&T)) {
+
+            fn visit(&self, operation: impl FnOnce(&T)) {
                 operation(&self.payload);
             }
-            
-            fn class() -> &'static str {
-                stringify!($name)
-            }
 
-            fn taxonomy() -> &'static str {
-                $taxonomy
+            fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
+                operation(&mut self.payload);
             }
         }
-        
-        impl<T> data_classification::Redact for $name<T>
+
+        impl<T> data_classification::Classified for $name<T>
         where
             T: std::fmt::Display,
         {
-            fn externalize(&self, redactor: &mut data_classification::Redactor) {
+            fn externalize(&self, redactor: data_classification::RedactionSink) {
                 redactor.write_str(self.payload.to_string().as_str())
+            }
+
+            fn class(&self) -> &'static str {
+                stringify!($name)
+            }
+
+            fn taxonomy(&self) -> &'static str {
+                $taxonomy
             }
         }
 
         impl<T> std::fmt::Display for $name<T>
-        where 
-            T: std::fmt::Display
+        where
+            T: std::fmt::Display,
         {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 const ASTERISKS: &str = "********************************";
@@ -81,7 +87,7 @@ macro_rules! data_class {
                 }
             }
         }
-        
+
         impl<T> std::fmt::Debug for $name<T>
         where
             T: std::fmt::Debug,
@@ -90,7 +96,7 @@ macro_rules! data_class {
                 std::write!(f, "$name<{self:?}>")
             }
         }
-        
+
         impl<T> std::clone::Clone for $name<T>
         where
             T: std::clone::Clone,
@@ -101,7 +107,7 @@ macro_rules! data_class {
                 }
             }
         }
-        
+
         impl<T> std::cmp::PartialEq for $name<T>
         where
             T: std::cmp::PartialEq,
@@ -110,12 +116,8 @@ macro_rules! data_class {
                 self.payload == other.payload
             }
         }
-        impl<T> std::cmp::Eq for $name<T>
-        where
-            T: std::cmp::Eq,
-        {
-        }
-        
+        impl<T> std::cmp::Eq for $name<T> where T: std::cmp::Eq {}
+
         impl<T> std::default::Default for $name<T>
         where
             T: std::default::Default,
@@ -126,13 +128,13 @@ macro_rules! data_class {
                 }
             }
         }
-        
+
         impl<T> std::convert::From<T> for $name<T> {
             fn from(payload: T) -> Self {
                 Self::new(payload)
             }
         }
-        
+
         impl<T> std::hash::Hash for $name<T>
         where
             T: std::hash::Hash,
@@ -164,6 +166,5 @@ macro_rules! data_class_deserialize {
         }
     };
 
-    (false, $name:ident) => {
-    };
+    (false, $name:ident) => {};
 }
