@@ -86,7 +86,7 @@ macro_rules! data_class {
             T: std::fmt::Display,
         {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                const ASTERISKS: &str = "********************************";
+                static ASTERISKS: &str = "********************************";
 
                 let len = self.payload.to_string().len();
                 if len < ASTERISKS.len() {
