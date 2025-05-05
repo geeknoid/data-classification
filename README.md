@@ -72,7 +72,7 @@ four arguments:
 - The name of the taxonomy.
 - The name of the data class.
 - A comment describing the data class.
-- A boolean indicating whether the data class should support deserialization with serde.
+- A flag indicating whether the data class should support deserialization with serde.
 
 The data class type that the macro generates is a wrapper that you use around your own application
 data types to indicate instances of those types hold sensitive data. Although applications typically

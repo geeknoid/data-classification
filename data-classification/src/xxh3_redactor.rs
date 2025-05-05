@@ -19,8 +19,9 @@ const DEFAULT_SECRET: [u8; DEFAULT_SECRET_SIZE] = [
 
 const REDACTED_LEN: usize = 16;
 
-#[allow(non_camel_case_types)]
 /// Produces redactors that replace the original string with the xxH3 hash of the string.
+#[allow(non_camel_case_types)]
+#[derive(Clone)]
 pub struct xxH3Redactor {
     secret: Box<[u8]>,
 }
@@ -50,6 +51,7 @@ impl Redactor for xxH3Redactor {
         let hash = xxh3_64_with_secret(value.as_bytes(), &self.secret);
         let buffer = u64_to_hex_array(hash);
 
+        // SAFETY: The buffer is guaranteed to be valid UTF-8 because it only contains hex digits.
         output(unsafe { std::str::from_utf8_unchecked(&buffer) });
     }
 

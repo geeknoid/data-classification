@@ -1,13 +1,14 @@
 use crate::{Classified, RedactionSink, Redactor};
 use std::collections::HashMap;
 
-#[derive(Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Clone)]
 pub struct Key {
     pub taxonomy: &'static str,
     pub class: &'static str,
 }
 
 /// Lets you apply redaction to classified data.
+#[derive(Clone)]
 pub struct RedactionEngine<'a> {
     redactors: HashMap<Key, &'a (dyn Redactor + 'a)>,
     fallback: &'a (dyn Redactor + 'a),

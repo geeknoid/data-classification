@@ -1,6 +1,7 @@
 use crate::Redactor;
 
 /// Produces redactors that do not modify the original string.
+#[derive(Clone)]
 pub struct NopRedactor {}
 
 impl NopRedactor {

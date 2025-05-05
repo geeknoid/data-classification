@@ -50,23 +50,6 @@ macro_rules! data_class {
             }
         }
 
-        impl<T> data_classification::ClassifiedAccessor<T> for $name<T>
-        where
-            T: Clone,
-        {
-            fn exfiltrate(self) -> T {
-                self.payload
-            }
-
-            fn visit(&self, operation: impl FnOnce(&T)) {
-                operation(&self.payload);
-            }
-
-            fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
-                operation(&mut self.payload);
-            }
-        }
-
         impl<T> data_classification::Classified for $name<T>
         where
             T: std::fmt::Display,
@@ -81,6 +64,20 @@ macro_rules! data_class {
 
             fn taxonomy(&self) -> &'static str {
                 $taxonomy
+            }
+        }
+
+        impl<T> data_classification::ClassifiedAccessor<T> for $name<T> {
+            fn exfiltrate(self) -> T {
+                self.payload
+            }
+
+            fn visit(&self, operation: impl FnOnce(&T)) {
+                operation(&self.payload);
+            }
+
+            fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
+                operation(&mut self.payload);
             }
         }
 

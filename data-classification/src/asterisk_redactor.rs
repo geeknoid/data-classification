@@ -1,6 +1,7 @@
 use crate::Redactor;
 
 /// Produces redactors that replace the original string with asterisks.
+#[derive(Clone)]
 pub struct AsteriskRedactor {}
 
 impl AsteriskRedactor {

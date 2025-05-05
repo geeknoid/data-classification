@@ -1,6 +1,7 @@
 use crate::Redactor;
 
 /// Produces redactors that simply erase the original string.
+#[derive(Clone)]
 pub struct ErasingRedactor {}
 
 impl ErasingRedactor {
