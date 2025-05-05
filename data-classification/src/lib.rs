@@ -79,7 +79,7 @@
 //!
 //! fn try_out() {
 //!     use data_classification::RedactionEngineBuilder;
-//! let person = Person {
+//!     let person = Person {
 //!         name: "John Doe".to_string().into(),
 //!         age: 30,
 //!     };
