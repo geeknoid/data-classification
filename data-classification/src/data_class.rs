@@ -7,16 +7,16 @@
 /// * `name`: The name of the data class.
 /// * `comment`: A comment describing the data class. This will be used as the doc comment for the
 ///   data class type.
-/// * `serde`: A boolean indicating whether the data class should support deserialization with serde.
+/// * `serde`: A flag indicating whether the data class should support deserialization with serde. Use `Serde` to enable support and `NoSerde` to skip it.
 ///
 /// ## Example
 ///
 /// ```rust
 /// use data_classification::data_class;
 ///
-/// data_class!("ContosoTaxonomy", CustomerContent, "Data that represents content produced by a customer", true);
-/// data_class!("ContosoTaxonomy", CustomerIdentifier, "Data that can identify a customer", true);
-/// data_class!("ContosoTaxonomy", OrganizationIdentifier, "Data that can identity an organization", true);
+/// data_class!("ContosoTaxonomy", CustomerContent, "Data that represents content produced by a customer", Serde);
+/// data_class!("ContosoTaxonomy", CustomerIdentifier, "Data that can identify a customer", Serde);
+/// data_class!("ContosoTaxonomy", OrganizationIdentifier, "Data that can identity an organization", Serde);
 /// ```
 #[macro_export]
 macro_rules! data_class {
@@ -151,7 +151,7 @@ macro_rules! data_class {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! data_class_deserialize {
-    (true, $name:ident) => {
+    (Serde, $name:ident) => {
         impl<'a, T> serde::Deserialize<'a> for $name<T>
         where
             T: serde::Deserialize<'a>,
@@ -166,5 +166,5 @@ macro_rules! data_class_deserialize {
         }
     };
 
-    (false, $name:ident) => {};
+    (NoSerde, $name:ident) => {};
 }
