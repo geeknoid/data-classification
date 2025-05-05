@@ -12,7 +12,7 @@ impl ErasingRedactor {
 }
 
 impl Redactor for ErasingRedactor {
-    fn redact<'a>(&self, _value: &str, _output: Box<dyn FnOnce(&str) + 'a>) {
+    fn redact<'a>(&self, _value: &str, _output: &'a mut dyn FnMut(&str)) {
         // nothing
     }
 

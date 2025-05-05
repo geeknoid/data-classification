@@ -8,16 +8,16 @@ pub struct Key {
 }
 
 /// Lets you apply redaction to classified data.
-pub struct RedactionEngine {
-    redactors: HashMap<Key, Box<dyn Redactor>>,
-    fallback: Box<dyn Redactor>,
+pub struct RedactionEngine<'a> {
+    redactors: HashMap<Key, &'a (dyn Redactor + 'a)>,
+    fallback: &'a (dyn Redactor + 'a),
 }
 
-impl RedactionEngine {
+impl<'a> RedactionEngine<'a> {
     #[must_use]
     pub(crate) fn new(
-        mut redactors: HashMap<Key, Box<dyn Redactor>>,
-        fallback: Box<dyn Redactor>,
+        mut redactors: HashMap<Key, &'a (dyn Redactor + 'a)>,
+        fallback: &'a (dyn Redactor + 'a),
     ) -> Self {
         redactors.shrink_to_fit();
 
@@ -28,9 +28,9 @@ impl RedactionEngine {
     }
 
     /// Redacts some classified data, sending the results to the output callback.
-    pub fn redact<F>(&self, value: &dyn Classified, output: F)
+    pub fn redact<F>(&self, value: &dyn Classified, mut output: F)
     where
-        F: FnOnce(&str),
+        F: FnMut(&str),
     {
         let key = Key {
             taxonomy: value.taxonomy(),
@@ -38,8 +38,10 @@ impl RedactionEngine {
         };
 
         let redactor = self.redactors.get(&key).unwrap_or(&self.fallback);
-        value.externalize(RedactionSink::new(Box::new(move |s: &str| {
-            redactor.redact(s, Box::new(output));
-        })));
+        let mut cb = move |s: &str| {
+            redactor.redact(s, &mut output);
+        };
+
+        value.externalize(RedactionSink::new(&mut cb));
     }
 }

@@ -36,6 +36,18 @@ macro_rules! data_class {
             pub fn exfiltrate(self) -> T {
                 self.payload
             }
+
+            /// Returns the class of the data which is within the scope of the taxonomy.
+            #[must_use]
+            pub const fn class() -> &'static str {
+                stringify!($name)
+            }
+
+            /// Returns the taxonomy of the data class.
+            #[must_use]
+            pub const fn taxonomy() -> &'static str {
+                $taxonomy
+            }
         }
 
         impl<T> data_classification::ClassifiedAccessor<T> for $name<T>

@@ -12,7 +12,7 @@ impl NopRedactor {
 }
 
 impl Redactor for NopRedactor {
-    fn redact<'a>(&self, value: &str, output: Box<dyn FnOnce(&str) + 'a>) {
+    fn redact<'a>(&self, value: &str, output: &'a mut dyn FnMut(&str)) {
         output(value);
     }
 }

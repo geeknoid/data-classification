@@ -96,14 +96,16 @@ struct Person {
 
 fn try_out() {
     use data_classification::RedactionEngineBuilder;
-let person = Person {
+    let person = Person {
         name: "John Doe".to_string().into(),
         age: 30,
     };
 
+    let asterisk_redactor = AsteriskRedactor::new();
+
     // Create the redaction engine. This is typically done once when the application starts.
     let engine = RedactionEngineBuilder::new()
-        .set_fallback_redactor(Box::new(AsteriskRedactor::new()))
+        .set_fallback_redactor(&asterisk_redactor)
         .build();
 
     let mut output_buffer = String::new();

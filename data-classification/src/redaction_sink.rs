@@ -1,6 +1,6 @@
 /// The output sink used to emit data to redact.
 pub struct RedactionSink<'a> {
-    output: Box<dyn FnOnce(&str) + 'a>,
+    output: &'a mut dyn FnMut(&str),
 }
 
 impl<'a> RedactionSink<'a> {
@@ -9,10 +9,8 @@ impl<'a> RedactionSink<'a> {
     /// Text written to the redactor is redirected to the provided output function, which
     /// is where redaction actually takes place.
     #[must_use]
-    pub fn new(output: Box<dyn FnOnce(&str) + 'a>) -> Self {
-        Self {
-            output,
-        }
+    pub fn new(output: &'a mut dyn FnMut(&str)) -> Self {
+        Self { output }
     }
 
     /// Writes a string slice to be redacted.

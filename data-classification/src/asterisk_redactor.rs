@@ -12,7 +12,7 @@ impl AsteriskRedactor {
 }
 
 impl Redactor for AsteriskRedactor {
-    fn redact<'a>(&self, value: &str, output: Box<dyn FnOnce(&str) + 'a>) {
+    fn redact<'a>(&self, value: &str, output: &'a mut dyn FnMut(&str)) {
         const ASTERISKS: &str = "********************************";
 
         let len = value.len();

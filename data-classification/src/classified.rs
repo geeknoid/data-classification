@@ -5,7 +5,7 @@ pub trait Classified {
     /// Converts the given value to a redacted form.
     fn externalize(&self, redactor: RedactionSink);
 
-    /// Returns the taxonomy of the data
+    /// Returns the taxonomy of the data class.
     fn taxonomy(&self) -> &'static str;
 
     /// Returns the class of the data which is within the scope of the taxonomy.
