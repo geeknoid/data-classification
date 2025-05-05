@@ -93,7 +93,7 @@ macro_rules! data_class {
 
                 let len = self.payload.to_string().len();
                 if len < ASTERISKS.len() {
-                    std::write!(f, "{0}", &ASTERISKS[0..len])
+                    std::write!(f, "$name<{0}>", &ASTERISKS[0..len])
                 } else {
                     std::write!(f, "$name<{0}>", "*".repeat(len))
                 }
