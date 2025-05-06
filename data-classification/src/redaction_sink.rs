@@ -1,4 +1,5 @@
 use crate::Redactor;
+use std::fmt::Write;
 
 /// The output sink used to emit data to redact.
 pub struct RedactionSink<'a> {
@@ -19,5 +20,12 @@ impl<'a> RedactionSink<'a> {
     /// Writes a string slice to be redacted.
     pub fn write_str(self, str: &str) {
         self.redactor.redact(str, self.output);
+    }
+}
+
+impl Write for RedactionSink<'_> {
+    fn write_str(&mut self, str: &str) -> std::fmt::Result {
+        self.redactor.redact(str, self.output);
+        Ok(())
     }
 }
