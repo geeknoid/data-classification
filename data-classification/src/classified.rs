@@ -8,6 +8,6 @@ pub trait Classified {
     /// Returns the taxonomy of the data class.
     fn taxonomy(&self) -> &'static str;
 
-    /// Returns the class of the data which is within the scope of the taxonomy.
+    /// Returns the name of the data class.
     fn class(&self) -> &'static str;
 }
