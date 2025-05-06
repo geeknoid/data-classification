@@ -68,7 +68,7 @@ impl Default for xxH3Redactor {
 
 #[inline]
 fn u64_to_hex_array(mut value: u64) -> [u8; 16] {
-    const HEX_LOWER_CHARS: &[u8; 16] = b"0123456789abcdef";
+    static HEX_LOWER_CHARS: &[u8; 16] = b"0123456789abcdef";
 
     let mut buffer = [0u8; REDACTED_LEN];
     for e in buffer.iter_mut().rev() {

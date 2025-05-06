@@ -39,10 +39,6 @@ impl<'a> RedactionEngine<'a> {
         };
 
         let redactor = self.redactors.get(&key).unwrap_or(&self.fallback);
-        let mut cb = move |s: &str| {
-            redactor.redact(s, &mut output);
-        };
-
-        value.externalize(RedactionSink::new(&mut cb));
+        value.externalize(RedactionSink::new(*redactor, &mut output));
     }
 }
