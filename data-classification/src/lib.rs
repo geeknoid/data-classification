@@ -48,7 +48,7 @@
 //!
 //! The data class type that the macro generates is a wrapper that you use around your own application
 //! data types to indicate instances of those types hold sensitive data. Although applications typically
-//! define their own taxonomies of data classes, this crate provides the [`Sensitive`] data class,
+//! define their own taxonomies of data classes, this crate provides the [`Sensitive<T>`] data class,
 //! which can be used for taxonomy-agnostic classification in libraries.
 //!
 //! Data class types hide the data for the value they hold and, as such, they don't implement the

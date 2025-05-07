@@ -4,7 +4,7 @@ use crate::data_class;
 #[cfg(feature = "serde")]
 data_class!(
     "Default",
-    SensitiveX,
+    Sensitive,
     "General-purpose way to mark data as being sensitive",
     Serde
 );
