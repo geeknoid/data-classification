@@ -2,12 +2,12 @@
 ///
 /// ## Arguments
 ///
-/// * `taxonomy`: The taxonomy to which the data class belongs. This is a string literal that will
-///   be used as the return value for the [`Classified::taxonomy`](crate::Classified::taxonomy) method.
+/// * `taxonomy`: The taxonomy to which the data class belongs. This is a string literal.
 /// * `name`: The name of the data class.
 /// * `comment`: A comment describing the data class. This will be used as the doc comment for the
 ///   data class type.
-/// * `serde`: A flag indicating whether the data class should support deserialization with serde. Use `Serde` to enable support and `NoSerde` to skip it.
+/// * `serde`: A flag indicating whether the data class should support deserialization with serde.
+///   Use `Serde` to enable support and `NoSerde` to skip it.
 ///
 /// ## Example
 ///
@@ -37,37 +37,26 @@ macro_rules! data_class {
                 self.payload
             }
 
-            /// Returns the taxonomy of the data class.
+            /// Returns the id of the data class.
             #[must_use]
-            pub const fn taxonomy() -> &'static str {
-                $taxonomy
-            }
-
-            /// Returns the name of the data class.
-            #[must_use]
-            pub const fn class() -> &'static str {
-                stringify!($name)
+            pub const fn id() -> data_classification::ClassId {
+                data_classification::ClassId::new($taxonomy, stringify!($name))
             }
         }
 
-        impl<T> data_classification::Classified for $name<T>
+        impl<T> data_classification::Extract for $name<T>
         where
             T: std::fmt::Display,
         {
-            fn externalize(&self, redactor: data_classification::RedactionSink) {
-                redactor.write_str(self.payload.to_string().as_str())
-            }
-
-            fn class(&self) -> &'static str {
-                stringify!($name)
-            }
-
-            fn taxonomy(&self) -> &'static str {
-                $taxonomy
+            fn extract(&self, extractor: data_classification::Extractor) {
+                extractor.write_str(
+                    &data_classification::ClassId::new($taxonomy, stringify!($name)),
+                    self.payload.to_string().as_str(),
+                )
             }
         }
 
-        impl<T> data_classification::ClassifiedAccessor<T> for $name<T> {
+        impl<T> data_classification::Classified<T> for $name<T> {
             fn exfiltrate(self) -> T {
                 self.payload
             }

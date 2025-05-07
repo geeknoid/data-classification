@@ -1,4 +1,5 @@
 use crate::Redactor;
+use data_classification::ClassId;
 
 /// Produces redactors that replace the original string with asterisks.
 #[derive(Clone)]
@@ -13,7 +14,7 @@ impl AsteriskRedactor {
 }
 
 impl Redactor for AsteriskRedactor {
-    fn redact<'a>(&self, value: &str, output: &'a mut dyn FnMut(&str)) {
+    fn redact<'a>(&self, _: &ClassId, value: &str, output: &'a mut dyn FnMut(&str)) {
         static ASTERISKS: &str = "********************************";
 
         let len = value.len();

@@ -1,4 +1,5 @@
 use crate::Redactor;
+use data_classification::ClassId;
 
 /// Produces redactors that simply erase the original string.
 #[derive(Clone)]
@@ -13,7 +14,7 @@ impl ErasingRedactor {
 }
 
 impl Redactor for ErasingRedactor {
-    fn redact<'a>(&self, _value: &str, _output: &'a mut dyn FnMut(&str)) {
+    fn redact<'a>(&self, _: &ClassId, _: &str, _: &'a mut dyn FnMut(&str)) {
         // nothing
     }
 

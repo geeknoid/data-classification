@@ -1,4 +1,5 @@
 use crate::Redactor;
+use data_classification::ClassId;
 
 /// Produces redactors that do not modify the original string.
 #[derive(Clone)]
@@ -13,7 +14,7 @@ impl NopRedactor {
 }
 
 impl Redactor for NopRedactor {
-    fn redact<'a>(&self, value: &str, output: &'a mut dyn FnMut(&str)) {
+    fn redact<'a>(&self, _: &ClassId, value: &str, output: &'a mut dyn FnMut(&str)) {
         output(value);
     }
 }

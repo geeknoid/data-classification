@@ -1,4 +1,5 @@
 use crate::Redactor;
+use data_classification::ClassId;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 
 const DEFAULT_SECRET_SIZE: usize = 192;
@@ -47,7 +48,7 @@ impl xxH3Redactor {
 }
 
 impl Redactor for xxH3Redactor {
-    fn redact<'a>(&self, value: &str, output: &'a mut dyn FnMut(&str)) {
+    fn redact<'a>(&self, _: &ClassId, value: &str, output: &'a mut dyn FnMut(&str)) {
         let hash = xxh3_64_with_secret(value.as_bytes(), &self.secret);
         let buffer = u64_to_hex_array(hash);
 

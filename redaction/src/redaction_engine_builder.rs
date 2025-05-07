@@ -1,10 +1,11 @@
-use crate::redaction_engine::{Key, RedactionEngine};
+use crate::redaction_engine::RedactionEngine;
 use crate::{ErasingRedactor, Redactor};
+use data_classification::ClassId;
 use std::collections::HashMap;
 
 /// A builder for creating a `RedactionEngine`.
 pub struct RedactionEngineBuilder<'a> {
-    redactors: HashMap<Key, &'a (dyn Redactor + 'a)>,
+    redactors: HashMap<ClassId, &'a (dyn Redactor + 'a)>,
     fallback: &'a (dyn Redactor + 'a),
 }
 
@@ -24,11 +25,10 @@ impl<'a> RedactionEngineBuilder<'a> {
     #[must_use]
     pub fn add_class_redactor(
         mut self,
-        taxonomy: &'static str,
-        class: &'static str,
+        class_id: &ClassId,
         redactor: &'a (dyn Redactor + 'a),
     ) -> Self {
-        _ = self.redactors.insert(Key { taxonomy, class }, redactor);
+        _ = self.redactors.insert(class_id.clone(), redactor);
 
         self
     }

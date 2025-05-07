@@ -1,6 +1,6 @@
 [package]
-name = "data-classification"
-description = "Data annotation system providing a robust way to manipulate sensitive information."
+name = "redaction"
+description = "General-purpose data redaction for compliant telemetry."
 readme.workspace = true
 authors.workspace = true
 version.workspace = true
@@ -13,11 +13,12 @@ rust-version.workspace = true
 resolver = "2"
 
 [dependencies]
-serde = { version = "1.0.219", optional = true, default-features = false }
+xxhash-rust = { version = "0.8.12", optional = true, features = ["xxh3"] }
+data-classification = { version = "0.1.0", path = "../data-classification", default-features = false }
 
 [features]
-default = ["serde"]
-serde = ["dep:serde"]
+default = ["xxh3"]
+xxh3 = ["dep:xxhash-rust"]
 
 [lints]
 workspace = true

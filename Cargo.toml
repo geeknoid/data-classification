@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "data-classification",
+    "redaction",
 ]
 
 [workspace.package]

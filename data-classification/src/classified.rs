@@ -1,13 +1,16 @@
-use crate::redaction_sink::RedactionSink;
+/// Provides access to the sensitive information held by an instance.
+pub trait Classified<T> {
+    /// Exfiltrates the payload, allowing it to be used outside the classified context.
+    ///
+    /// Exfiltration should be done with caution, as it may expose sensitive information.
+    ///
+    /// # Returns
+    /// The original payload.
+    fn exfiltrate(self) -> T;
 
-/// Represents a type that holds sensitive information.
-pub trait Classified {
-    /// Converts the given value to a redacted form.
-    fn externalize(&self, redactor: RedactionSink);
+    /// Visits the payload with the provided operation.
+    fn visit(&self, operation: impl FnOnce(&T));
 
-    /// Returns the taxonomy of the data class.
-    fn taxonomy(&self) -> &'static str;
-
-    /// Returns the name of the data class.
-    fn class(&self) -> &'static str;
+    /// Visits the payload with the provided operation.
+    fn visit_mut(&mut self, operation: impl FnOnce(&mut T));
 }
