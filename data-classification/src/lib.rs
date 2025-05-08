@@ -1,4 +1,4 @@
-//! This crate provides a way to classify and manipulate sensitive data.
+//! This crate provides mechanisms to classify and manipulate sensitive data.
 //!
 //! Commercial software often needs to handle sensitive data, such as personally identifiable information (PII).
 //! A user's name, IP address, email address, and other similar information require special treatment. For
@@ -27,7 +27,7 @@
 //!
 //! * The [`Extract`] trait is used to extract sensitive data from an instance. In other words, it
 //!   works a lot like the [`Display`](std::fmt::Display) trait but instead of producing text
-//!   intended to be displayed to a user, it produces text that is intended for redaction.
+//!   intended to be displayed to a user, it produces text intended for redaction.
 //!
 //! * The [`Classified`] trait is used to mark types that let you access the sensitive
 //!   data they hold in a way that can easily be audited.

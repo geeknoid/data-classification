@@ -1,4 +1,4 @@
-//! This crate redact sensitive data before it is used in telemetry.
+//! This crate provides mechanisms to redact sensitive data before it is used in telemetry.
 //!
 //! Commercial software often needs to handle sensitive data, such as personally identifiable information (PII).
 //! A user's name, IP address, email address, and other similar information require special treatment. For
