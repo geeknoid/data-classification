@@ -33,7 +33,7 @@
 //! ```rust
 //! use std::fmt::Write;
 //! use data_classification::Sensitive;
-//! use redaction::{AsteriskRedactor, ErasingRedactor, Redactor, RedactionEngineBuilder};
+//! use redaction::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
 //!
 //! struct Person {
 //!     name: Sensitive<String>, // a bit of sensitive data we should not leak in logs
@@ -46,8 +46,8 @@
 //!         age: 30,
 //!     };
 //!
-//!     let asterisk_redactor = AsteriskRedactor::new();
-//!     let erasing_redactor = ErasingRedactor::new();
+//!     let asterisk_redactor = SimpleRedactor::new();
+//!     let erasing_redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
 //!
 //!     // Create the redaction engine. This is typically done once when the application starts.
 //!     let engine = RedactionEngineBuilder::new()
@@ -68,22 +68,18 @@
 //! # }
 //! ```
 
-mod asterisk_redactor;
-mod erasing_redactor;
-mod nop_redactor;
 mod redaction_engine;
 mod redaction_engine_builder;
 mod redactor;
+mod simple_redactor;
 
 #[cfg(feature = "xxh3")]
 mod xxh3_redactor;
 
-pub use asterisk_redactor::AsteriskRedactor;
-pub use erasing_redactor::ErasingRedactor;
-pub use nop_redactor::NopRedactor;
 pub use redaction_engine::RedactionEngine;
 pub use redaction_engine_builder::RedactionEngineBuilder;
 pub use redactor::Redactor;
+pub use simple_redactor::{SimpleRedactor, SimpleRedactorMode};
 
 #[cfg(feature = "xxh3")]
 pub use crate::xxh3_redactor::xxH3Redactor;

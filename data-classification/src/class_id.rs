@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 /// The identity of a well-known data class.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct ClassId {
@@ -22,5 +24,11 @@ impl ClassId {
     #[must_use]
     pub const fn class(&self) -> &'static str {
         self.class
+    }
+}
+
+impl Display for ClassId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.taxonomy, self.class)
     }
 }

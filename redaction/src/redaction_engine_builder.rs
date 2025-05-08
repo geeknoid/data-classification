@@ -1,5 +1,5 @@
 use crate::redaction_engine::RedactionEngine;
-use crate::{ErasingRedactor, Redactor};
+use crate::{Redactor, SimpleRedactor, SimpleRedactorMode};
 use data_classification::ClassId;
 use std::collections::HashMap;
 
@@ -9,7 +9,7 @@ pub struct RedactionEngineBuilder<'a> {
     fallback: &'a (dyn Redactor + 'a),
 }
 
-static ERASING_REDACTOR: ErasingRedactor = ErasingRedactor::new();
+static ERASING_REDACTOR: SimpleRedactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
 
 impl<'a> RedactionEngineBuilder<'a> {
     /// Creates a new instance of `RedactionEngineBuilder`.

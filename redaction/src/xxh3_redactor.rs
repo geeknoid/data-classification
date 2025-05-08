@@ -20,7 +20,7 @@ const DEFAULT_SECRET: [u8; DEFAULT_SECRET_SIZE] = [
 
 const REDACTED_LEN: usize = 16;
 
-/// Produces redactors that replace the original string with the xxH3 hash of the string.
+/// A redactor that replaces the original string with the xxH3 hash of the string.
 #[allow(non_camel_case_types)]
 #[derive(Clone)]
 pub struct xxH3Redactor {
