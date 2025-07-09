@@ -38,7 +38,7 @@
 //! implement both the [`Extract`] and [`Classified`] traits, indicating that they contain
 //! sensitive data, which can be extracted for telemetry.
 //!
-//! The [`data_class!`] macro is the preferred way to define a data class type. The macro takes
+//! The [`classified_data_wrapper!`] macro is the preferred way to define a data class type. The macro takes
 //! four arguments:
 //!
 //! - The name of the taxonomy.
@@ -84,15 +84,15 @@
 //! # }
 //! ```
 
+mod builtin_wrappers;
 mod class_id;
 mod classified;
-mod data_class;
+mod classified_data_wrapper;
 mod extract;
 mod extractor;
-mod sensitive;
 
+pub use builtin_wrappers::*;
 pub use class_id::ClassId;
 pub use classified::Classified;
 pub use extract::Extract;
 pub use extractor::Extractor;
-pub use sensitive::*;

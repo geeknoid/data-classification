@@ -5,21 +5,21 @@
 /// * `taxonomy`: The taxonomy to which the data class belongs. This is a string literal.
 /// * `name`: The name of the data class.
 /// * `comment`: A comment describing the data class. This will be used as the doc comment for the
-///   data class type.
+///   generated data class type.
 /// * `serde`: A flag indicating whether the data class should support deserialization with serde.
 ///   Use `Serde` to enable support and `NoSerde` to skip it.
 ///
 /// ## Example
 ///
 /// ```rust
-/// use data_classification::data_class;
+/// use data_classification::classified_data_wrapper;
 ///
-/// data_class!("ContosoTaxonomy", CustomerContent, "Data that represents content produced by a customer", Serde);
-/// data_class!("ContosoTaxonomy", CustomerIdentifier, "Data that can identify a customer", Serde);
-/// data_class!("ContosoTaxonomy", OrganizationIdentifier, "Data that can identity an organization", Serde);
+/// classified_data_wrapper!("ContosoTaxonomy", CustomerContent, "Data that represents content produced by a customer", Serde);
+/// classified_data_wrapper!("ContosoTaxonomy", CustomerIdentifier, "Data that can identify a customer", Serde);
+/// classified_data_wrapper!("ContosoTaxonomy", OrganizationIdentifier, "Data that can identity an organization", Serde);
 /// ```
 #[macro_export]
-macro_rules! data_class {
+macro_rules! classified_data_wrapper {
     ($taxonomy:expr, $name:ident, $comment:expr, $serde:tt) => {
         #[doc = $comment]
         pub struct $name<T> {
@@ -46,7 +46,7 @@ macro_rules! data_class {
 
         impl<T> data_classification::Extract for $name<T>
         where
-            T: std::fmt::Display,
+            T: core::fmt::Display,
         {
             fn extract(&self, extractor: data_classification::Extractor) {
                 extractor.write_str(
@@ -70,34 +70,35 @@ macro_rules! data_class {
             }
         }
 
-        impl<T> std::fmt::Display for $name<T>
+        impl<T> core::fmt::Display for $name<T>
         where
-            T: std::fmt::Display,
+            T: core::fmt::Display,
         {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            #[expect(clippy::string_slice, reason = "No problem with UTF-8 here")]
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 static ASTERISKS: &str = "********************************";
 
                 let len = self.payload.to_string().len();
                 if len < ASTERISKS.len() {
-                    std::write!(f, "$name<{0}>", &ASTERISKS[0..len])
+                    core::write!(f, "$name<{0}>", &ASTERISKS[0..len])
                 } else {
-                    std::write!(f, "$name<{0}>", "*".repeat(len))
+                    core::write!(f, "$name<{0}>", "*".repeat(len))
                 }
             }
         }
 
-        impl<T> std::fmt::Debug for $name<T>
+        impl<T> core::fmt::Debug for $name<T>
         where
-            T: std::fmt::Debug,
+            T: core::fmt::Debug,
         {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                std::write!(f, "$name<{self:?}>")
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                core::write!(f, "$name<{self:?}>")
             }
         }
 
-        impl<T> std::clone::Clone for $name<T>
+        impl<T> core::clone::Clone for $name<T>
         where
-            T: std::clone::Clone,
+            T: core::clone::Clone,
         {
             fn clone(&self) -> Self {
                 Self {
@@ -106,19 +107,37 @@ macro_rules! data_class {
             }
         }
 
-        impl<T> std::cmp::PartialEq for $name<T>
+        impl<T> core::cmp::PartialEq for $name<T>
         where
-            T: std::cmp::PartialEq,
+            T: core::cmp::PartialEq,
         {
             fn eq(&self, other: &Self) -> bool {
                 self.payload == other.payload
             }
         }
-        impl<T> std::cmp::Eq for $name<T> where T: std::cmp::Eq {}
 
-        impl<T> std::default::Default for $name<T>
+        impl<T> core::cmp::Eq for $name<T> where T: core::cmp::Eq {}
+
+        impl<T> core::cmp::PartialOrd for $name<T>
         where
-            T: std::default::Default,
+            T: core::cmp::PartialOrd,
+        {
+            fn partial_cmp(&self, other: &Self) -> core::option::Option<core::cmp::Ordering> {
+                self.payload.partial_cmp(&other.payload)
+            }
+        }
+        impl<T> core::cmp::Ord for $name<T>
+        where
+            T: core::cmp::Ord,
+        {
+            fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+                self.payload.cmp(&other.payload)
+            }
+        }
+
+        impl<T> core::default::Default for $name<T>
+        where
+            T: core::default::Default,
         {
             fn default() -> Self {
                 Self {
@@ -127,28 +146,28 @@ macro_rules! data_class {
             }
         }
 
-        impl<T> std::convert::From<T> for $name<T> {
+        impl<T> core::hash::Hash for $name<T>
+        where
+            T: core::hash::Hash,
+        {
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+                self.payload.hash(state);
+            }
+        }
+
+        impl<T> core::convert::From<T> for $name<T> {
             fn from(payload: T) -> Self {
                 Self::new(payload)
             }
         }
 
-        impl<T> std::hash::Hash for $name<T>
-        where
-            T: std::hash::Hash,
-        {
-            fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-                self.payload.hash(state);
-            }
-        }
-
-        data_classification::data_class_deserialize!($serde, $name);
+        data_classification::classified_data_wrapper_deserialize!($serde, $name);
     };
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! data_class_deserialize {
+macro_rules! classified_data_wrapper_deserialize {
     (Serde, $name:ident) => {
         impl<'a, T> serde::Deserialize<'a> for $name<T>
         where

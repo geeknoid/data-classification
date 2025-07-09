@@ -3,7 +3,7 @@ use data_classification::ClassId;
 /// Represents types that can redact data.
 pub trait Redactor {
     /// Redacts the given value and calls the output function with the redacted value.
-    fn redact<'a>(&self, class_id: &ClassId, value: &str, output: &'a mut dyn FnMut(&str));
+    fn redact(&self, class_id: &ClassId, value: &str, output: &mut dyn FnMut(&str));
 
     /// The exact length of redacted strings, if they are constant.
     ///

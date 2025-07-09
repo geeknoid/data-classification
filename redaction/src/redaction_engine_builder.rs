@@ -4,6 +4,10 @@ use data_classification::ClassId;
 use std::collections::HashMap;
 
 /// A builder for creating a `RedactionEngine`.
+#[expect(
+    missing_debug_implementations,
+    reason = "Nothing to output for debugging"
+)]
 pub struct RedactionEngineBuilder<'a> {
     redactors: HashMap<ClassId, &'a (dyn Redactor + 'a)>,
     fallback: &'a (dyn Redactor + 'a),

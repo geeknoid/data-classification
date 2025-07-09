@@ -1,6 +1,10 @@
 use crate::ClassId;
 
 /// The output sink used to emit sensitive data from an instance.
+#[expect(
+    missing_debug_implementations,
+    reason = "Nothing to output for debugging"
+)]
 pub struct Extractor<'a> {
     output: &'a mut dyn FnMut(&ClassId, &str),
 }

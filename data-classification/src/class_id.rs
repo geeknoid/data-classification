@@ -1,7 +1,8 @@
-use std::fmt::Display;
+use core::fmt::Display;
 
 /// The identity of a well-known data class.
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ClassId {
     taxonomy: &'static str,
     class: &'static str,
@@ -28,7 +29,7 @@ impl ClassId {
 }
 
 impl Display for ClassId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}.{}", self.taxonomy, self.class)
     }
 }

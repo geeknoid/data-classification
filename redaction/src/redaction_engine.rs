@@ -4,6 +4,10 @@ use std::collections::HashMap;
 
 /// Lets you apply redaction to classified data.
 #[derive(Clone)]
+#[expect(
+    missing_debug_implementations,
+    reason = "Nothing to output for debugging"
+)]
 pub struct RedactionEngine<'a> {
     redactors: HashMap<ClassId, &'a (dyn Redactor + 'a)>,
     fallback: &'a (dyn Redactor + 'a),

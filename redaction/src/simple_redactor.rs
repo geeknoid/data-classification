@@ -30,7 +30,7 @@ pub enum SimpleRedactorMode {
 }
 
 /// A redactor that performs a variety of simple transformations on the input text.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SimpleRedactor {
     mode: SimpleRedactorMode,
 }
@@ -52,7 +52,7 @@ impl SimpleRedactor {
 }
 
 impl Redactor for SimpleRedactor {
-    fn redact<'a>(&self, class_id: &ClassId, value: &str, output: &'a mut dyn FnMut(&str)) {
+    fn redact(&self, class_id: &ClassId, value: &str, output: &mut dyn FnMut(&str)) {
         static ASTERISKS: &str = "********************************";
 
         match &self.mode {
@@ -68,6 +68,8 @@ impl Redactor for SimpleRedactor {
             SimpleRedactorMode::PassthroughAndTag => {
                 output(format!("<{class_id}:{value}>").as_str());
             }
+
+            #[expect(clippy::string_slice, reason = "No problem with UTF-8 here")]
             SimpleRedactorMode::Replace(c) => {
                 let len = value.len();
                 if *c == '*' && len < ASTERISKS.len() {
@@ -76,6 +78,8 @@ impl Redactor for SimpleRedactor {
                     output(c.to_string().repeat(len).as_str());
                 }
             }
+
+            #[expect(clippy::string_slice, reason = "No problem with UTF-8 here")]
             SimpleRedactorMode::ReplaceAndTag(c) => {
                 let len = value.len();
                 if *c == '*' && len < ASTERISKS.len() {
