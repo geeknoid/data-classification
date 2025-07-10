@@ -5,7 +5,7 @@
 //! example, it's usually not legally acceptable to emit a user's email address in a system's logs.
 //! Following these rules can be challenging and error-prone, especially when the data is
 //! transferred between different components of a large complex system. This crate provides
-//! mechanisms to help reduce the risk of exposing sensitive data.
+//! mechanisms to reduce the risk of unintentionally exposing sensitive data.
 //!
 //! This crate leverages the `data-classification`'s crate data annotation model to recognize
 //! sensitive data and provides flexible mechanisms to systematically redact sensitive data

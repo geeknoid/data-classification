@@ -1,12 +1,20 @@
-/// Generates a data class type.
+/// Generates a classified data wrapper type.
+///
+/// The type produced by this macro is a wrapper around a payload type `T`.
+/// The wrapper automatically implements a number of traits to enable the wrapper
+/// to be used safely within an application, without the risk of leaking sensitive data.
+///
+/// For example, if the data held by the wrapper implements the [`Hash`](core::hash::Hash) trait,
+/// then so does the wrapper. This makes it possible to put the wrapper instances into a map, just
+/// like the original data.///
 ///
 /// ## Arguments
 ///
 /// * `taxonomy`: The taxonomy to which the data class belongs. This is a string literal.
-/// * `name`: The name of the data class.
+/// * `name`: The name of the wrapper.
 /// * `comment`: A comment describing the data class. This will be used as the doc comment for the
-///   generated data class type.
-/// * `serde`: A flag indicating whether the data class should support deserialization with serde.
+///   generated wrapper type.
+/// * `serde`: A flag indicating whether the wrapper should support deserialization with serde.
 ///   Use `Serde` to enable support and `NoSerde` to skip it.
 ///
 /// ## Example
@@ -68,6 +76,10 @@ macro_rules! classified_data_wrapper {
             fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
                 operation(&mut self.payload);
             }
+
+            fn id() -> data_classification::ClassId {
+                data_classification::ClassId::new($taxonomy, stringify!($name))
+            }
         }
 
         impl<T> core::fmt::Display for $name<T>
@@ -80,9 +92,9 @@ macro_rules! classified_data_wrapper {
 
                 let len = self.payload.to_string().len();
                 if len < ASTERISKS.len() {
-                    core::write!(f, "$name<{0}>", &ASTERISKS[0..len])
+                    core::write!(f, "{0}<{1}>", stringify!($name), &ASTERISKS[0..len])
                 } else {
-                    core::write!(f, "$name<{0}>", "*".repeat(len))
+                    core::write!(f, "{0}<{1}>", stringify!($name), "*".repeat(len))
                 }
             }
         }
@@ -92,7 +104,7 @@ macro_rules! classified_data_wrapper {
             T: core::fmt::Debug,
         {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                core::write!(f, "$name<{self:?}>")
+                core::write!(f, "{}(...)", stringify!($name))
             }
         }
 
@@ -162,7 +174,28 @@ macro_rules! classified_data_wrapper {
         }
 
         data_classification::classified_data_wrapper_deserialize!($serde, $name);
+        data_classification::classified_data_wrapper_serialize!($serde, $name);
     };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! classified_data_wrapper_serialize {
+    (Serde, $name:ident) => {
+        impl<T> serde::Serialize for $name<T>
+        where
+            T: serde::Serialize,
+        {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                self.payload.serialize(serializer)
+            }
+        }
+    };
+
+    (NoSerde, $name:ident) => {};
 }
 
 #[doc(hidden)]

@@ -82,3 +82,192 @@ fn u64_to_hex_array(mut value: u64) -> [u8; 16] {
 
     buffer
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_creates_redactor_with_default_secret() {
+        let redactor = xxH3Redactor::new();
+        assert_eq!(redactor.secret.len(), DEFAULT_SECRET_SIZE);
+        assert_eq!(redactor.secret.as_ref(), &DEFAULT_SECRET);
+    }
+
+    #[test]
+    fn test_with_secret_creates_redactor_with_custom_secret() {
+        let custom_secret = b"custom_secret_for_testing_purposes";
+        let redactor = xxH3Redactor::with_secret(custom_secret);
+        assert_eq!(redactor.secret.as_ref(), custom_secret);
+    }
+
+    #[test]
+    fn test_default_trait_implementation() {
+        let redactor = xxH3Redactor::default();
+        assert_eq!(redactor.secret.len(), DEFAULT_SECRET_SIZE);
+        assert_eq!(redactor.secret.as_ref(), &DEFAULT_SECRET);
+    }
+
+    #[test]
+    fn test_exact_len_returns_correct_length() {
+        let redactor = xxH3Redactor::new();
+        assert_eq!(redactor.exact_len(), Some(REDACTED_LEN));
+    }
+
+    #[test]
+    fn test_redact_produces_consistent_output() {
+        let redactor = xxH3Redactor::new();
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let input = "sensitive_data";
+
+        let mut output1 = String::new();
+        let mut output2 = String::new();
+
+        redactor.redact(&class_id, input, &mut |s| output1.push_str(s));
+        redactor.redact(&class_id, input, &mut |s| output2.push_str(s));
+
+        assert_eq!(output1, output2);
+        assert_eq!(output1.len(), REDACTED_LEN);
+    }
+
+    #[test]
+    fn test_redact_output_is_hex_string() {
+        let redactor = xxH3Redactor::new();
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let input = "test_input";
+
+        let mut output = String::new();
+        redactor.redact(&class_id, input, &mut |s| output.push_str(s));
+
+        assert_eq!(output.len(), REDACTED_LEN);
+        assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
+        assert!(
+            output
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+        );
+    }
+
+    #[test]
+    fn test_different_inputs_produce_different_outputs() {
+        let redactor = xxH3Redactor::new();
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+
+        let mut output1 = String::new();
+        let mut output2 = String::new();
+
+        redactor.redact(&class_id, "input1", &mut |s| output1.push_str(s));
+        redactor.redact(&class_id, "input2", &mut |s| output2.push_str(s));
+
+        assert_ne!(output1, output2);
+    }
+
+    #[test]
+    fn test_different_secrets_produce_different_outputs() {
+        let redactor1 = xxH3Redactor::new();
+        // Create a custom secret that's at least 136 bytes (xxHash minimum)
+        let custom_secret = vec![0x42u8; 136];
+        let redactor2 = xxH3Redactor::with_secret(&custom_secret);
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let input = "same_input";
+
+        let mut output1 = String::new();
+        let mut output2 = String::new();
+
+        redactor1.redact(&class_id, input, &mut |s| output1.push_str(s));
+        redactor2.redact(&class_id, input, &mut |s| output2.push_str(s));
+
+        assert_ne!(output1, output2);
+    }
+
+    #[test]
+    fn test_empty_string_input() {
+        let redactor = xxH3Redactor::new();
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+
+        let mut output = String::new();
+        redactor.redact(&class_id, "", &mut |s| output.push_str(s));
+
+        assert_eq!(output.len(), REDACTED_LEN);
+        assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_unicode_input() {
+        let redactor = xxH3Redactor::new();
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let input = "こんにちは世界"; // "Hello World" in Japanese
+
+        let mut output = String::new();
+        redactor.redact(&class_id, input, &mut |s| output.push_str(s));
+
+        assert_eq!(output.len(), REDACTED_LEN);
+        assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_u64_to_hex_array() {
+        let result = u64_to_hex_array(0x1234_5678_9abc_def0);
+        let expected = b"123456789abcdef0";
+        assert_eq!(result, *expected);
+
+        let result = u64_to_hex_array(0);
+        let expected = b"0000000000000000";
+        assert_eq!(result, *expected);
+
+        let result = u64_to_hex_array(u64::MAX);
+        let expected = b"ffffffffffffffff";
+        assert_eq!(result, *expected);
+    }
+
+    #[test]
+    fn test_clone_produces_identical_redactor() {
+        // Create a custom secret that's at least 136 bytes (xxHash minimum)
+        let custom_secret = vec![0x33u8; 136];
+        let original = xxH3Redactor::with_secret(&custom_secret);
+        let cloned = original.clone();
+
+        assert_eq!(original.secret, cloned.secret);
+
+        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let input = "test_input";
+
+        let mut output1 = String::new();
+        let mut output2 = String::new();
+
+        original.redact(&class_id, input, &mut |s| output1.push_str(s));
+        cloned.redact(&class_id, input, &mut |s| output2.push_str(s));
+
+        assert_eq!(output1, output2);
+    }
+
+    #[test]
+    fn test_custom_secret_edge_cases() {
+        // Test with minimum viable secret (136 bytes for xxHash)
+        let small_secret = vec![0x11u8; 136];
+        let redactor = xxH3Redactor::with_secret(&small_secret);
+        assert_eq!(redactor.secret.len(), 136);
+
+        // Test with larger secret
+        let large_secret = vec![0u8; 256];
+        let redactor = xxH3Redactor::with_secret(&large_secret);
+        assert_eq!(redactor.secret.len(), 256);
+    }
+
+    #[test]
+    fn test_class_id_does_not_affect_output() {
+        let redactor = xxH3Redactor::new();
+        let class_id1 = ClassId::new("test_taxonomy", "class1");
+        let class_id2 = ClassId::new("test_taxonomy", "class2");
+        let input = "test_input";
+
+        let mut output1 = String::new();
+        let mut output2 = String::new();
+
+        redactor.redact(&class_id1, input, &mut |s| output1.push_str(s));
+        redactor.redact(&class_id2, input, &mut |s| output2.push_str(s));
+
+        // The class_id parameter is ignored in the redaction process
+        assert_eq!(output1, output2);
+    }
+}
