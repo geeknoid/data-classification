@@ -1,4 +1,4 @@
-use crate::ClassId;
+use crate::DataClass;
 
 /// Represents a container that holds classified state.
 ///
@@ -6,6 +6,58 @@ use crate::ClassId;
 /// instance they are given to ensure it is handled carefully throughout the application.
 /// Although instances are encapsulated, it's possible to extract the instances when
 /// classification is no longer needed.
+///
+/// # Example
+///
+/// ```rust
+/// use data_classification::{Classified, DataClass, Extract, Extractor};
+///
+/// struct Person {
+///    name: String,
+///    address: String,
+/// }
+///
+/// impl Person {
+///     fn new(name: String, address: String) -> Self {
+///         Self { name, address }
+///     }
+/// }
+///
+/// struct ClassifiedPerson {
+///     person: Person
+/// }
+///
+/// impl ClassifiedPerson {
+///    fn new(person: Person) -> Self {
+///        Self { person }
+///    }
+/// }
+///
+/// impl Classified<Person> for ClassifiedPerson {
+///     fn exfiltrate(self) -> Person {
+///         self.person
+///     }
+///
+///     fn visit(&self, operation: impl FnOnce(&Person)) {
+///         operation(&self.person);
+///     }
+///
+///     fn visit_mut(&mut self, operation: impl FnOnce(&mut Person)) {
+///         operation(&mut self.person);
+///     }
+///
+///     fn data_class() -> DataClass {
+///         DataClass::new("example_taxonomy", "classified_person")
+///     }
+/// }
+///
+/// // implement this trait to enable the type to be used with redaction.
+/// impl Extract for ClassifiedPerson {
+///     fn extract(&self, extractor: Extractor) {
+///         extractor.write_str(Self::data_class(), &self.person.name);
+///     }
+/// }
+///  ```
 pub trait Classified<T> {
     /// Exfiltrates the payload, allowing it to be used outside the classified context.
     ///
@@ -22,7 +74,7 @@ pub trait Classified<T> {
     /// Visits the payload with the provided operation.
     fn visit_mut(&mut self, operation: impl FnOnce(&mut T));
 
-    /// Returns the id of the data class of the classified data.
+    /// Returns the data class of the classified data.
     #[must_use]
-    fn id() -> ClassId;
+    fn data_class() -> DataClass;
 }

@@ -1,50 +1,71 @@
+//! A simple data taxonomy with universal data classes.
+//!
 use crate as data_classification;
-use crate::classified_data_wrapper;
+use crate::data_class;
 
-const TAXONOMY: &str = "Default";
-
-#[cfg(feature = "serde")]
-classified_data_wrapper!(TAXONOMY, Sensitive, "Holds sensitive data.", Serde);
+/// System-level taxonomy usable in any context.
+pub const CORE_TAXONOMY: &str = "Core";
 
 #[cfg(feature = "serde")]
-classified_data_wrapper!(
-    TAXONOMY,
-    Unknown,
-    "Holds data with an unknown classification.",
+data_class!(
+    CORE_TAXONOMY,
+    Sensitive,
+    SENSITIVE,
+    comment =
+        "This is used in situations where no specific taxonomy is available, such as in a library.",
     Serde
 );
 
 #[cfg(feature = "serde")]
-classified_data_wrapper!(
-    TAXONOMY,
-    Unclassified,
-    "Holds data which has no classification.",
+data_class!(
+    CORE_TAXONOMY,
+    UnknownSensitivity,
+    UNKNOWN_SENSITIVITY,
+    comment = "This is used in situations where the sensitivity of the data is unknown.",
+    Serde
+);
+
+#[cfg(feature = "serde")]
+data_class!(
+    CORE_TAXONOMY,
+    Insensitive,
+    INSENSITIVE,
+    comment = "This is used in situations where the data is explicitly unclassified.",
     Serde
 );
 
 #[cfg(not(feature = "serde"))]
-classified_data_wrapper!(TAXONOMY, Sensitive, "Holds sensitive data.", NoSerde);
-
-#[cfg(not(feature = "serde"))]
-classified_data_wrapper!(
-    TAXONOMY,
-    Unknown,
-    "Holds data with an unknown classification.",
+data_class!(
+    CORE_TAXONOMY,
+    Sensitive,
+    SENSITIVE,
+    comment =
+        "This is used in situations where no specific taxonomy is available, such as in a library.",
     NoSerde
 );
 
 #[cfg(not(feature = "serde"))]
-classified_data_wrapper!(
-    TAXONOMY,
-    Unclassified,
-    "Holds data which has no classification.",
+data_class!(
+    CORE_TAXONOMY,
+    UnknownSensitivity,
+    UNKNOWN_SENSITIVITY,
+    comment = "This is used in situations where the sensitivity of the data is unknown.",
+    NoSerde
+);
+
+#[cfg(not(feature = "serde"))]
+data_class!(
+    CORE_TAXONOMY,
+    Insensitive,
+    INSENSITIVE,
+    comment = "This is used in situations where the data is explicitly unclassified.",
     NoSerde
 );
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ClassId, Classified};
+    use crate::{Classified, DataClass};
     use core::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
 
@@ -52,7 +73,7 @@ mod tests {
         ($wrapper:ident, $module:ident, $expected_name:expr) => {
             mod $module {
                 use super::*;
-                use crate::$wrapper as Wrapper;
+                use crate::core_taxonomy::$wrapper as Wrapper;
 
                 #[test]
                 fn test_new_and_exfiltrate() {
@@ -76,12 +97,12 @@ mod tests {
                 }
 
                 #[test]
-                fn test_id() {
-                    let id = Wrapper::<String>::id();
-                    assert_eq!(id, ClassId::new(TAXONOMY, $expected_name));
+                fn test_data_class() {
+                    let id = Wrapper::<String>::data_class();
+                    assert_eq!(id, DataClass::new(CORE_TAXONOMY, $expected_name));
 
-                    let trait_id = <Wrapper<String> as Classified<String>>::id();
-                    assert_eq!(trait_id, ClassId::new(TAXONOMY, $expected_name));
+                    let trait_id = <Wrapper<String> as Classified<String>>::data_class();
+                    assert_eq!(trait_id, DataClass::new(CORE_TAXONOMY, $expected_name));
 
                     // Verify both methods return the same result
                     assert_eq!(id, trait_id);
@@ -176,7 +197,10 @@ mod tests {
                     let mut wrapped = Wrapper::new(data);
 
                     // Test id
-                    assert_eq!(Wrapper::<i32>::id(), ClassId::new(TAXONOMY, $expected_name));
+                    assert_eq!(
+                        Wrapper::<i32>::data_class(),
+                        DataClass::new(CORE_TAXONOMY, $expected_name)
+                    );
 
                     // Test visit
                     let mut visited = false;
@@ -346,6 +370,10 @@ mod tests {
     }
 
     test_wrapper!(Sensitive, sensitive, "Sensitive");
-    test_wrapper!(Unknown, unknown, "Unknown");
-    test_wrapper!(Unclassified, unclassified, "Unclassified");
+    test_wrapper!(
+        UnknownSensitivity,
+        unknown_sensitivity,
+        "UnknownSensitivity"
+    );
+    test_wrapper!(Insensitive, insensitive, "Insensitive");
 }

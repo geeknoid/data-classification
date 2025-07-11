@@ -1,4 +1,4 @@
-//! This crate provides mechanisms to redact sensitive data before it is used in telemetry.
+//! Mechanisms to redact sensitive data before it is used in telemetry.
 //!
 //! Commercial software often needs to handle sensitive data, such as personally identifiable information (PII).
 //! A user's name, IP address, email address, and other similar information require special treatment. For
@@ -7,8 +7,8 @@
 //! transferred between different components of a large complex system. This crate provides
 //! mechanisms to reduce the risk of unintentionally exposing sensitive data.
 //!
-//! This crate leverages the `data-classification`'s crate data annotation model to recognize
-//! sensitive data and provides flexible mechanisms to systematically redact sensitive data
+//! This crate leverages the `data-classification` crate's data classification model to recognize
+//! sensitive data and provide flexible mechanisms to systematically redact such data
 //! in a variety of ways, ensuring the sensitive data is not leaked in telemetry.
 //!
 //! # Concepts
@@ -32,7 +32,7 @@
 //!
 //! ```rust
 //! use std::fmt::Write;
-//! use data_classification::Sensitive;
+//! use data_classification::core_taxonomy::{SENSITIVE, Sensitive};
 //! use redaction::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
 //!
 //! struct Person {
@@ -51,12 +51,13 @@
 //!
 //!     // Create the redaction engine. This is typically done once when the application starts.
 //!     let engine = RedactionEngineBuilder::new()
-//!         .add_class_redactor(&Sensitive::<()>::id(), &asterisk_redactor)
+//!         .add_class_redactor(SENSITIVE, &asterisk_redactor)
 //!         .set_fallback_redactor(&erasing_redactor)
 //!         .build();
 //!
 //!     let mut output_buffer = String::new();
 //!
+//!     // Redact the sensitive data in the person's name using the redaction engine.
 //!     engine.redact(&person.name, |s| output_buffer.write_str(s).unwrap());
 //!
 //!     // check that the data in the output buffer has indeed been redacted as expected.

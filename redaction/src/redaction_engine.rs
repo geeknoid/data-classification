@@ -1,16 +1,19 @@
 use crate::Redactor;
-use data_classification::{ClassId, Extract, Extractor};
+use core::fmt::Debug;
+use data_classification::{DataClass, Extract, Extractor};
 use std::collections::HashMap;
 
 /// Lets you apply redaction to classified data.
 ///
 /// You use [`RedactionEngineBuilder`](crate::RedactionEngineBuilder) to create an instance of this type.
+/// The builder lets you configure exactly which redactor to use to redact individual data classes encountered
+/// while producing telemetry.
 ///
 /// ## Example
 ///
 /// ```rust
 /// use std::fmt::Write;
-/// use data_classification::Sensitive;
+/// use data_classification::core_taxonomy::{SENSITIVE, Sensitive};
 /// use redaction::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
 ///
 /// struct Person {
@@ -29,7 +32,7 @@ use std::collections::HashMap;
 ///
 ///     // Create the redaction engine. This is typically done once when the application starts.
 ///     let engine = RedactionEngineBuilder::new()
-///         .add_class_redactor(&Sensitive::<()>::id(), &asterisk_redactor)
+///         .add_class_redactor(SENSITIVE, &asterisk_redactor)
 ///         .set_fallback_redactor(&erasing_redactor)
 ///         .build();
 ///
@@ -46,19 +49,15 @@ use std::collections::HashMap;
 /// # }
 /// ```
 #[derive(Clone)]
-#[expect(
-    missing_debug_implementations,
-    reason = "Nothing to output for debugging"
-)]
 pub struct RedactionEngine<'a> {
-    redactors: HashMap<ClassId, &'a (dyn Redactor + 'a)>,
+    redactors: HashMap<DataClass, &'a (dyn Redactor + 'a)>,
     fallback: &'a (dyn Redactor + 'a),
 }
 
 impl<'a> RedactionEngine<'a> {
     #[must_use]
     pub(crate) fn new(
-        mut redactors: HashMap<ClassId, &'a (dyn Redactor + 'a)>,
+        mut redactors: HashMap<DataClass, &'a (dyn Redactor + 'a)>,
         fallback: &'a (dyn Redactor + 'a),
     ) -> Self {
         redactors.shrink_to_fit();
@@ -71,45 +70,55 @@ impl<'a> RedactionEngine<'a> {
 
     /// Redacts some classified data, sending the results to the output callback.
     pub fn redact(&self, value: &dyn Extract, mut output: impl FnMut(&str)) {
-        let mut cb = move |class_id: &ClassId, value: &str| {
-            let redactor = self.redactors.get(class_id).unwrap_or(&self.fallback);
-            redactor.redact(class_id, value, &mut output);
-        };
-
-        value.extract(Extractor::new(&mut cb));
+        value.extract(Extractor::new(
+            &mut (move |data_class: DataClass, value: &str| {
+                self.redact_as_class(data_class, value, &mut output);
+            }),
+        ));
     }
 
     /// Redacts a string with an explicit data classification, sending the results to the output callback.
     pub fn redact_as_class(
         &self,
-        class_id: &ClassId,
+        data_class: DataClass,
         value: impl AsRef<str>,
         mut output: impl FnMut(&str),
     ) {
-        let redactor = self.redactors.get(class_id).unwrap_or(&self.fallback);
-        redactor.redact(class_id, value.as_ref(), &mut output);
+        let redactor = self.redactors.get(&data_class).unwrap_or(&self.fallback);
+        redactor.redact(data_class, value.as_ref(), &mut output);
+    }
+
+    /// The exact length of the redacted output if it is a constant.
+    ///
+    /// This can be used as a hint to optimize buffer allocations.
+    #[must_use]
+    pub fn exact_len(&self, data_class: DataClass) -> Option<usize> {
+        let redactor = self.redactors.get(&data_class).unwrap_or(&self.fallback);
+        redactor.exact_len()
+    }
+}
+
+impl Debug for RedactionEngine<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_list().entries(self.redactors.keys()).finish()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SimpleRedactor, SimpleRedactorMode};
-    use data_classification::{Sensitive, Unclassified, Unknown, classified_data_wrapper};
+    use crate::{RedactionEngineBuilder, SimpleRedactor, SimpleRedactorMode};
+    use core::fmt::Write;
+    use data_classification::core_taxonomy::{
+        Insensitive, SENSITIVE, Sensitive, UnknownSensitivity,
+    };
+    use data_classification::data_class;
+
+    const TEST_TAXONOMY: &str = "TestTaxonomy";
 
     // Define custom wrapper types for testing
-    classified_data_wrapper!(
-        "TestTaxonomy",
-        Personal,
-        "Personal information for testing",
-        NoSerde
-    );
-    classified_data_wrapper!(
-        "TestTaxonomy",
-        Financial,
-        "Financial information for testing",
-        NoSerde
-    );
+    data_class!(TEST_TAXONOMY, Personal, PERSONAL, NoSerde);
+    data_class!(TEST_TAXONOMY, Financial, FINANCIAL, NoSerde);
 
     // Helper function to create a simple test redactor
     fn create_test_redactor(mode: SimpleRedactorMode) -> SimpleRedactor {
@@ -126,11 +135,11 @@ mod tests {
     // Helper function to collect redaction output for explicit class
     fn collect_output_as_class(
         engine: &RedactionEngine,
-        class_id: &ClassId,
+        data_class: DataClass,
         value: &str,
     ) -> String {
         let mut output = String::new();
-        engine.redact_as_class(class_id, value, |s| output.push_str(s));
+        engine.redact_as_class(data_class, value, |s| output.push_str(s));
         output
     }
 
@@ -140,7 +149,10 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
@@ -154,7 +166,10 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
@@ -170,11 +185,14 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Replace('X'));
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
-        let unknown_data = Unknown::new("john@example.com".to_string());
+        let unknown_data = UnknownSensitivity::new("john@example.com".to_string());
         let result = collect_output(&engine, &unknown_data);
 
         assert_eq!(result, "XXXXXXXXXXXXXXXX"); // Should use fallback redactor
@@ -186,11 +204,15 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
-        let result = collect_output_as_class(&engine, &Sensitive::<()>::id(), "confidential");
+        let result =
+            collect_output_as_class(&engine, Sensitive::<()>::data_class(), "confidential");
 
         assert_eq!(result, "************"); // Should use asterisk redactor
     }
@@ -201,12 +223,15 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Replace('?'));
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
-        let unknown_class = ClassId::new("unknown", "test");
-        let result = collect_output_as_class(&engine, &unknown_class, "data");
+        let unknown_class = DataClass::new("unknown", "test");
+        let result = collect_output_as_class(&engine, unknown_class, "data");
 
         assert_eq!(result, "????"); // Should use fallback redactor
     }
@@ -218,8 +243,11 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
-        _ = redactors.insert(Personal::<()>::id(), &hash_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
+        _ = redactors.insert(PERSONAL, &hash_redactor as &dyn Redactor);
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
@@ -241,14 +269,20 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &insert_redactor as &dyn Redactor);
-        _ = redactors.insert(Unknown::<()>::id(), &passthrough_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &insert_redactor as &dyn Redactor,
+        );
+        _ = redactors.insert(
+            UnknownSensitivity::<()>::data_class(),
+            &passthrough_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
         let sensitive_data = Sensitive::new("secret".to_string());
-        let unknown_data = Unknown::new("public".to_string());
-        let unclassified_data = Unclassified::new("account123".to_string());
+        let unknown_data = UnknownSensitivity::new("public".to_string());
+        let unclassified_data = Insensitive::new("account123".to_string());
 
         let sensitive_result = collect_output(&engine, &sensitive_data);
         let unknown_result = collect_output(&engine, &unknown_data);
@@ -265,7 +299,10 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
@@ -281,11 +318,14 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
 
-        let result = collect_output_as_class(&engine, &Sensitive::<()>::id(), "");
+        let result = collect_output_as_class(&engine, Sensitive::<()>::data_class(), "");
 
         assert_eq!(result, ""); // Empty string should remain empty
     }
@@ -296,7 +336,10 @@ mod tests {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
         let mut redactors = HashMap::new();
-        _ = redactors.insert(Sensitive::<()>::id(), &asterisk_redactor as &dyn Redactor);
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
 
         let engine = RedactionEngine::new(redactors, &fallback_redactor);
         let cloned_engine = engine.clone();
@@ -316,7 +359,7 @@ mod tests {
 
         let mut redactors = HashMap::new();
         _ = redactors.insert(
-            Sensitive::<()>::id(),
+            Sensitive::<()>::data_class(),
             &passthrough_redactor as &dyn Redactor,
         );
 
@@ -333,5 +376,74 @@ mod tests {
 
         assert_eq!(call_count, 1);
         assert_eq!(total_output, "hello world");
+    }
+
+    struct Person {
+        name: Sensitive<String>, // a bit of sensitive data we should not leak in logs
+    }
+
+    #[test]
+    fn test_basic() {
+        let person = Person {
+            name: "John Doe".to_string().into(),
+        };
+
+        let asterisk_redactor = SimpleRedactor::new();
+        let erasing_redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
+
+        // Create the redaction engine. This is typically done once when the application starts.
+        let engine = RedactionEngineBuilder::new()
+            .add_class_redactor(SENSITIVE, &asterisk_redactor)
+            .set_fallback_redactor(&erasing_redactor)
+            .build();
+
+        let mut output_buffer = String::new();
+
+        engine.redact(&person.name, |s| output_buffer.write_str(s).unwrap());
+
+        assert_eq!(None, engine.exact_len(SENSITIVE));
+        assert_eq!(output_buffer, "********");
+    }
+
+    #[test]
+    fn test_debug_trait_implementation() {
+        let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
+        let hash_redactor = create_test_redactor(SimpleRedactorMode::Replace('#'));
+        let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
+
+        let mut redactors = HashMap::new();
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &asterisk_redactor as &dyn Redactor,
+        );
+        _ = redactors.insert(PERSONAL, &hash_redactor as &dyn Redactor);
+
+        let engine = RedactionEngine::new(redactors, &fallback_redactor);
+
+        // Test the Debug trait implementation
+        let debug_output = format!("{engine:?}");
+
+        // The Debug implementation should show a list of registered data class keys
+        // Since HashMap iteration order is not guaranteed, we need to check that both keys are present
+        assert!(debug_output.contains("Sensitive") || debug_output.contains("SENSITIVE"));
+        assert!(debug_output.contains("Personal") || debug_output.contains("PERSONAL"));
+
+        // Should be formatted as a debug list (starts with [ and ends with ])
+        assert!(debug_output.starts_with('['));
+        assert!(debug_output.ends_with(']'));
+    }
+
+    #[test]
+    fn test_debug_trait_with_empty_redactors() {
+        let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
+        let redactors = HashMap::new();
+
+        let engine = RedactionEngine::new(redactors, &fallback_redactor);
+
+        // Test the Debug trait implementation with no redactors
+        let debug_output = format!("{engine:?}");
+
+        // Should be an empty debug list
+        assert_eq!(debug_output, "[]");
     }
 }

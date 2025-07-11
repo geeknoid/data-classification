@@ -1,5 +1,5 @@
 use crate::Redactor;
-use data_classification::ClassId;
+use data_classification::DataClass;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
 
 const DEFAULT_SECRET_SIZE: usize = 192;
@@ -35,7 +35,7 @@ impl xxH3Redactor {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            secret: DEFAULT_SECRET.to_vec().into_boxed_slice(),
+            secret: Box::from(DEFAULT_SECRET),
         }
     }
 
@@ -45,13 +45,13 @@ impl xxH3Redactor {
     #[must_use]
     pub fn with_secret(secret: impl AsRef<[u8]>) -> Self {
         Self {
-            secret: secret.as_ref().to_vec().into_boxed_slice(),
+            secret: Box::from(secret.as_ref()),
         }
     }
 }
 
 impl Redactor for xxH3Redactor {
-    fn redact(&self, _: &ClassId, value: &str, output: &mut dyn FnMut(&str)) {
+    fn redact(&self, _: DataClass, value: &str, output: &mut dyn FnMut(&str)) {
         let hash = xxh3_64_with_secret(value.as_bytes(), &self.secret);
         let buffer = u64_to_hex_array(hash);
 
@@ -117,14 +117,14 @@ mod tests {
     #[test]
     fn test_redact_produces_consistent_output() {
         let redactor = xxH3Redactor::new();
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
         let input = "sensitive_data";
 
         let mut output1 = String::new();
         let mut output2 = String::new();
 
-        redactor.redact(&class_id, input, &mut |s| output1.push_str(s));
-        redactor.redact(&class_id, input, &mut |s| output2.push_str(s));
+        redactor.redact(data_class, input, &mut |s| output1.push_str(s));
+        redactor.redact(data_class, input, &mut |s| output2.push_str(s));
 
         assert_eq!(output1, output2);
         assert_eq!(output1.len(), REDACTED_LEN);
@@ -133,11 +133,11 @@ mod tests {
     #[test]
     fn test_redact_output_is_hex_string() {
         let redactor = xxH3Redactor::new();
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
         let input = "test_input";
 
         let mut output = String::new();
-        redactor.redact(&class_id, input, &mut |s| output.push_str(s));
+        redactor.redact(data_class, input, &mut |s| output.push_str(s));
 
         assert_eq!(output.len(), REDACTED_LEN);
         assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
@@ -151,13 +151,13 @@ mod tests {
     #[test]
     fn test_different_inputs_produce_different_outputs() {
         let redactor = xxH3Redactor::new();
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
 
         let mut output1 = String::new();
         let mut output2 = String::new();
 
-        redactor.redact(&class_id, "input1", &mut |s| output1.push_str(s));
-        redactor.redact(&class_id, "input2", &mut |s| output2.push_str(s));
+        redactor.redact(data_class, "input1", &mut |s| output1.push_str(s));
+        redactor.redact(data_class, "input2", &mut |s| output2.push_str(s));
 
         assert_ne!(output1, output2);
     }
@@ -168,14 +168,14 @@ mod tests {
         // Create a custom secret that's at least 136 bytes (xxHash minimum)
         let custom_secret = vec![0x42u8; 136];
         let redactor2 = xxH3Redactor::with_secret(&custom_secret);
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
         let input = "same_input";
 
         let mut output1 = String::new();
         let mut output2 = String::new();
 
-        redactor1.redact(&class_id, input, &mut |s| output1.push_str(s));
-        redactor2.redact(&class_id, input, &mut |s| output2.push_str(s));
+        redactor1.redact(data_class, input, &mut |s| output1.push_str(s));
+        redactor2.redact(data_class, input, &mut |s| output2.push_str(s));
 
         assert_ne!(output1, output2);
     }
@@ -183,10 +183,10 @@ mod tests {
     #[test]
     fn test_empty_string_input() {
         let redactor = xxH3Redactor::new();
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
 
         let mut output = String::new();
-        redactor.redact(&class_id, "", &mut |s| output.push_str(s));
+        redactor.redact(data_class, "", &mut |s| output.push_str(s));
 
         assert_eq!(output.len(), REDACTED_LEN);
         assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
@@ -195,11 +195,11 @@ mod tests {
     #[test]
     fn test_unicode_input() {
         let redactor = xxH3Redactor::new();
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
         let input = "こんにちは世界"; // "Hello World" in Japanese
 
         let mut output = String::new();
-        redactor.redact(&class_id, input, &mut |s| output.push_str(s));
+        redactor.redact(data_class, input, &mut |s| output.push_str(s));
 
         assert_eq!(output.len(), REDACTED_LEN);
         assert!(output.chars().all(|c| c.is_ascii_hexdigit()));
@@ -229,14 +229,14 @@ mod tests {
 
         assert_eq!(original.secret, cloned.secret);
 
-        let class_id = ClassId::new("test_taxonomy", "test_class");
+        let data_class = DataClass::new("test_taxonomy", "test_class");
         let input = "test_input";
 
         let mut output1 = String::new();
         let mut output2 = String::new();
 
-        original.redact(&class_id, input, &mut |s| output1.push_str(s));
-        cloned.redact(&class_id, input, &mut |s| output2.push_str(s));
+        original.redact(data_class, input, &mut |s| output1.push_str(s));
+        cloned.redact(data_class, input, &mut |s| output2.push_str(s));
 
         assert_eq!(output1, output2);
     }
@@ -255,19 +255,19 @@ mod tests {
     }
 
     #[test]
-    fn test_class_id_does_not_affect_output() {
+    fn test_data_class_does_not_affect_output() {
         let redactor = xxH3Redactor::new();
-        let class_id1 = ClassId::new("test_taxonomy", "class1");
-        let class_id2 = ClassId::new("test_taxonomy", "class2");
+        let data_class1 = DataClass::new("test_taxonomy", "class1");
+        let data_class2 = DataClass::new("test_taxonomy", "class2");
         let input = "test_input";
 
         let mut output1 = String::new();
         let mut output2 = String::new();
 
-        redactor.redact(&class_id1, input, &mut |s| output1.push_str(s));
-        redactor.redact(&class_id2, input, &mut |s| output2.push_str(s));
+        redactor.redact(data_class1, input, &mut |s| output1.push_str(s));
+        redactor.redact(data_class2, input, &mut |s| output2.push_str(s));
 
-        // The class_id parameter is ignored in the redaction process
+        // The data_class parameter is ignored in the redaction process
         assert_eq!(output1, output2);
     }
 }

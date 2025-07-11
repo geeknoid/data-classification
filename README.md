@@ -10,7 +10,8 @@
 * [Summary](#summary)
 * [Concepts](#concepts)
 * [Traits](#traits)
-* [Classified Data Wrappers](#classified-data-wrappers)
+* [Data Classes](#data-classes)
+* [Classified Containers](#classified-containers)
 * [Example](#example)
 
 ## Summary
@@ -62,32 +63,30 @@ These crates are built around three traits:
   do different transformations to the data such as replacing it with asterisks or replacing it
   with a hash value.
 
-## Classified Data Wrappers
+## Data Classes
 
-A classified data wrapper is used to encapsulate sensitive data. Wrapper types implement both the
-`Classified` and `Extract` traits, indicating that they contain sensitive data, which can be
-extracted for telemetry.
+A `DataClass` is a struct that represents a single data class within a taxonomy. The struct
+contains the name of the taxonomy and the name of the data class.
 
-The `classified_data_wrapper!` macro is the preferred way to define a classified data wrapper type. The macro takes
-four arguments:
+## Classified Containers
 
-- The name of the taxonomy.
-- The name of the data class.
-- A comment describing the data class.
-- A flag indicating whether the data class should support deserialization with serde.
+Types that implement the `Classified` trait are said to be classified containers. They encapsulate
+an instance of another type. Although containers can be created by hand, they are most commonly created
+using the `data_class!` macro. See the documentation for the macro to learn how you define your own
+taxonomy and all its data classes.
 
-Applications use the classified data wrapper types around application
+Applications use the classified container types around application
 data types to indicate instances of those types hold sensitive data. Although applications typically
-define their own taxonomies of data classes, this crate defines three well-known wrapper types:
+define their own taxonomies of data classes, this crate defines three well-known data classes:
 
 * `Sensitive<T>` which can be used for taxonomy-agnostic classification in libraries.
-* `Unknown<T>` which holds data without a known classification.
-* `Unclassified<T>` which holds data that explicitly has no classification.
+* `UnknownSensitivity<T>` which holds data without a known classification.
+* `Insensitive<T>` which holds data that explicitly has no classification.
 
 ## Example
 
 ```rust
-use data_classification::Sensitive;
+use data_classification::core_taxonomy::Sensitive;
 
 struct Person {
     name: Sensitive<String>, // a bit of sensitive data we should not leak in logs
