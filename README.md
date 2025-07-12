@@ -72,7 +72,7 @@ contains the name of the taxonomy and the name of the data class.
 
 Types that implement the `Classified` trait are said to be classified containers. They encapsulate
 an instance of another type. Although containers can be created by hand, they are most commonly created
-using the `data_class!` macro. See the documentation for the macro to learn how you define your own
+using the `taxonomy!` macro. See the documentation for the macro to learn how you define your own
 taxonomy and all its data classes.
 
 Applications use the classified container types around application

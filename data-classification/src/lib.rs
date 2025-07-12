@@ -41,7 +41,7 @@
 //!
 //! Types that implement the [`Classified`] trait are said to be classified containers. They encapsulate
 //! an instance of another type. Although containers can be created by hand, they are most commonly created
-//! using the [`data_class!`] macro. See the documentation for the macro to learn how you define your own
+//! using the [`taxonomy`] attribute. See the documentation for the macro to learn how you define your own
 //! taxonomy and all its data classes.
 //!
 //! Applications use the classified container types around application
@@ -72,7 +72,7 @@
 //!     // println!("Name: {}", person.name);
 //!
 //!    // extract the data from the `Sensitive` type
-//!    let name = person.name.exfiltrate();
+//!    let name = person.name.declassify();
 //!    println!("Name: {name}");
 //! }
 //! #
@@ -83,12 +83,38 @@
 
 mod classified;
 pub mod core_taxonomy;
-mod data_class_macro;
-mod data_class_struct;
+mod data_class;
 mod extract;
 mod extractor;
 
 pub use classified::Classified;
-pub use data_class_struct::DataClass;
+pub use data_class::DataClass;
 pub use extract::Extract;
 pub use extractor::Extractor;
+
+/// Generates implementation logic and types to expose a data taxonomy.
+///
+/// This macro is applied to an enum declaration. Each variant of the enum
+/// represents a data class within the taxonomy.
+///
+/// You provide a taxonomy name as first argument, followed by an optional `serde = false` or `serde = true`
+/// argument to control whether serde support is included in the generated taxonomy code.
+/// The default value for `serde` is `true`, meaning that serde support is included by default.
+///
+/// This attribute produces an implementation block for the enum which includes one method for
+/// each variant of the enum. These methods each return a [`DataClass`] instance representing that data class.
+/// In addition, classified data container types are generated for each data class.
+///
+/// ## Example
+///
+/// ```ignore
+/// use data_classification::taxonomy;
+///
+/// #[taxonomy(contoso, serde = false)]
+/// enum ContosoTaxonomy {
+///     CustomerContent,
+///     CustomerIdentifier,
+///     OrganizationIdentifier,
+/// }
+/// ```
+pub use data_classification_macros::taxonomy;

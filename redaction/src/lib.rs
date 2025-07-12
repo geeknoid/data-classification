@@ -32,7 +32,7 @@
 //!
 //! ```rust
 //! use std::fmt::Write;
-//! use data_classification::core_taxonomy::{SENSITIVE, Sensitive};
+//! use data_classification::core_taxonomy::{CoreTaxonomy, Sensitive};
 //! use redaction::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
 //!
 //! struct Person {
@@ -51,7 +51,7 @@
 //!
 //!     // Create the redaction engine. This is typically done once when the application starts.
 //!     let engine = RedactionEngineBuilder::new()
-//!         .add_class_redactor(SENSITIVE, &asterisk_redactor)
+//!         .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), &asterisk_redactor)
 //!         .set_fallback_redactor(&erasing_redactor)
 //!         .build();
 //!

@@ -10,7 +10,6 @@ keywords.workspace = true
 repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
-resolver = "2"
 
 [dependencies]
 xxhash-rust = { version = "0.8.12", optional = true, features = ["xxh3"] }

@@ -30,10 +30,10 @@ impl<'a> RedactionEngineBuilder<'a> {
     #[must_use]
     pub fn add_class_redactor(
         mut self,
-        data_class: DataClass,
+        data_class: &DataClass,
         redactor: &'a (dyn Redactor + 'a),
     ) -> Self {
-        _ = self.redactors.insert(data_class, redactor);
+        _ = self.redactors.insert(data_class.clone(), redactor);
 
         self
     }
@@ -73,7 +73,7 @@ mod tests {
 
     fn test_redaction(
         engine: &RedactionEngine,
-        data_class: DataClass,
+        data_class: &DataClass,
         input: &str,
         expected: &str,
     ) {
@@ -88,7 +88,7 @@ mod tests {
         let engine = builder.build();
         test_redaction(
             &engine,
-            DataClass::new("test_taxonomy", "test_class"),
+            &DataClass::new("test_taxonomy", "test_class"),
             "sensitive data",
             "",
         );
@@ -97,7 +97,7 @@ mod tests {
         let engine = builder.build();
         test_redaction(
             &engine,
-            DataClass::new("test_taxonomy", "test_class"),
+            &DataClass::new("test_taxonomy", "test_class"),
             "sensitive data",
             "",
         );
@@ -113,13 +113,13 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(data_class1, &redactor1)
-            .add_class_redactor(data_class2, &redactor2);
+            .add_class_redactor(&data_class1, &redactor1)
+            .add_class_redactor(&data_class2, &redactor2);
 
         let engine = builder.build();
-        test_redaction(&engine, data_class1, "sensitive data", "XX");
-        test_redaction(&engine, data_class2, "sensitive data", "YY");
-        test_redaction(&engine, data_class3, "sensitive data", "");
+        test_redaction(&engine, &data_class1, "sensitive data", "XX");
+        test_redaction(&engine, &data_class2, "sensitive data", "YY");
+        test_redaction(&engine, &data_class3, "sensitive data", "");
     }
 
     #[test]
@@ -133,14 +133,14 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(data_class1, &redactor1)
-            .add_class_redactor(data_class2, &redactor2)
+            .add_class_redactor(&data_class1, &redactor1)
+            .add_class_redactor(&data_class2, &redactor2)
             .set_fallback_redactor(&redactor3);
 
         let engine = builder.build();
-        test_redaction(&engine, data_class1, "sensitive data", "XX");
-        test_redaction(&engine, data_class2, "sensitive data", "YY");
-        test_redaction(&engine, data_class3, "sensitive data", "ZZ");
+        test_redaction(&engine, &data_class1, "sensitive data", "XX");
+        test_redaction(&engine, &data_class2, "sensitive data", "YY");
+        test_redaction(&engine, &data_class3, "sensitive data", "ZZ");
     }
 
     #[test]
@@ -152,8 +152,8 @@ mod tests {
         let data_class2 = DataClass::new("taxonomy", "class2");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(data_class1, &redactor1)
-            .add_class_redactor(data_class2, &redactor2);
+            .add_class_redactor(&data_class1, &redactor1)
+            .add_class_redactor(&data_class2, &redactor2);
 
         let debug_output = format!("{builder:?}");
 

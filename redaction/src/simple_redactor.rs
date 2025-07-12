@@ -52,7 +52,7 @@ impl SimpleRedactor {
 }
 
 impl Redactor for SimpleRedactor {
-    fn redact(&self, data_class: DataClass, value: &str, output: &mut dyn FnMut(&str)) {
+    fn redact(&self, data_class: &DataClass, value: &str, output: &mut dyn FnMut(&str)) {
         static ASTERISKS: &str = "********************************";
 
         match &self.mode {
@@ -118,7 +118,7 @@ mod tests {
     const TEST_CLASS_ID: DataClass = DataClass::new("test_taxonomy", "test_class");
     const TEST_VALUE: &str = "secret";
 
-    fn redact_to_string(redactor: &SimpleRedactor, data_class: DataClass, value: &str) -> String {
+    fn redact_to_string(redactor: &SimpleRedactor, data_class: &DataClass, value: &str) -> String {
         let mut output = String::new();
         redactor.redact(data_class, value, &mut |s| output.push_str(s));
         output
@@ -147,56 +147,56 @@ mod tests {
     #[test]
     fn redact_should_erase() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, "");
     }
 
     #[test]
     fn redact_should_erase_and_tag() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::EraseAndTag);
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, "<test_taxonomy/test_class:>");
     }
 
     #[test]
     fn redact_should_passthrough() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Passthrough);
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, TEST_VALUE);
     }
 
     #[test]
     fn redact_should_passthrough_and_tag() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::PassthroughAndTag);
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, format!("<{TEST_CLASS_ID}:{TEST_VALUE}>"));
     }
 
     #[test]
     fn redact_should_replace_with_asterisks() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Replace('*'));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, "******");
     }
 
     #[test]
     fn redact_should_replace_with_char() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Replace('#'));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, "######");
     }
 
     #[test]
     fn redact_should_replace_and_tag_with_asterisks() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::ReplaceAndTag('*'));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, format!("<{TEST_CLASS_ID}:******>"));
     }
 
     #[test]
     fn redact_should_replace_and_tag_with_char() {
         let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::ReplaceAndTag('#'));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, format!("<{TEST_CLASS_ID}:######>"));
     }
 
@@ -204,7 +204,7 @@ mod tests {
     fn redact_should_insert() {
         let redactor =
             SimpleRedactor::with_mode(SimpleRedactorMode::Insert("replacement".to_string()));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, "replacement");
     }
 
@@ -212,7 +212,7 @@ mod tests {
     fn redact_should_insert_and_tag() {
         let redactor =
             SimpleRedactor::with_mode(SimpleRedactorMode::InsertAndTag("replacement".to_string()));
-        let result = redact_to_string(&redactor, TEST_CLASS_ID, TEST_VALUE);
+        let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, format!("<{TEST_CLASS_ID}:replacement>"));
     }
 }

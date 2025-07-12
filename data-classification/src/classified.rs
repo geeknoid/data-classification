@@ -34,7 +34,7 @@ use crate::DataClass;
 /// }
 ///
 /// impl Classified<Person> for ClassifiedPerson {
-///     fn exfiltrate(self) -> Person {
+///     fn declassify(self) -> Person {
 ///         self.person
 ///     }
 ///
@@ -54,7 +54,7 @@ use crate::DataClass;
 /// // implement this trait to enable the type to be used with redaction.
 /// impl Extract for ClassifiedPerson {
 ///     fn extract(&self, extractor: Extractor) {
-///         extractor.write_str(Self::data_class(), &self.person.name);
+///         extractor.write_str(&Self::data_class(), &self.person.name);
 ///     }
 /// }
 ///  ```
@@ -66,7 +66,7 @@ pub trait Classified<T> {
     /// # Returns
     /// The original payload.
     #[must_use]
-    fn exfiltrate(self) -> T;
+    fn declassify(self) -> T;
 
     /// Visits the payload with the provided operation.
     fn visit(&self, operation: impl FnOnce(&T));
