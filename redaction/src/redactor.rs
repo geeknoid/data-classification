@@ -13,3 +13,22 @@ pub trait Redactor {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestRedactor;
+
+    impl Redactor for TestRedactor {
+        fn redact(&self, _data_class: &DataClass, value: &str, output: &mut dyn FnMut(&str)) {
+            output(value);
+        }
+    }
+
+    #[test]
+    fn test_exact_len_default_behavior() {
+        let redactor = TestRedactor;
+        assert_eq!(redactor.exact_len(), None);
+    }
+}

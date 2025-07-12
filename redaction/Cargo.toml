@@ -14,6 +14,7 @@ rust-version.workspace = true
 [dependencies]
 xxhash-rust = { version = "0.8.12", optional = true, features = ["xxh3"] }
 data-classification = { version = "0.1.0", path = "../data-classification", default-features = false }
+mutants = { version = "0.0.3" }
 
 [features]
 default = ["xxh3"]

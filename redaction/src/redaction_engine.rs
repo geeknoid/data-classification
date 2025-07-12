@@ -454,4 +454,64 @@ mod tests {
         // Should be an empty debug list
         assert_eq!(debug_output, "[]");
     }
+
+    #[test]
+    fn test_exact_len_returns_correct_value_for_selected_redactor_type() {
+        // Create different redactor types with known exact_len behavior
+        let erase_redactor = create_test_redactor(SimpleRedactorMode::Erase);
+        let replace_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
+        let passthrough_redactor = create_test_redactor(SimpleRedactorMode::Passthrough);
+        let fallback_redactor =
+            create_test_redactor(SimpleRedactorMode::Insert("REDACTED".to_string()));
+
+        let mut redactors = HashMap::new();
+        _ = redactors.insert(
+            Sensitive::<()>::data_class(),
+            &erase_redactor as &dyn Redactor,
+        );
+        _ = redactors.insert(
+            Insensitive::<()>::data_class(),
+            &replace_redactor as &dyn Redactor,
+        );
+        _ = redactors.insert(
+            TestTaxonomy::Personal.data_class(),
+            &passthrough_redactor as &dyn Redactor,
+        );
+
+        let engine = RedactionEngine::new(redactors, &fallback_redactor);
+
+        // Test exact_len for Erase mode - should return Some(0)
+        let erase_len = engine.exact_len(&Sensitive::<()>::data_class());
+        assert_eq!(erase_len, Some(0), "Erase redactor should return Some(0)");
+
+        // Test exact_len for Replace mode - should return None (depends on input length)
+        let replace_len = engine.exact_len(&Insensitive::<()>::data_class());
+        assert_eq!(replace_len, None, "Replace redactor should return None");
+
+        // Test exact_len for Passthrough mode - should return None (depends on input length)
+        let passthrough_len = engine.exact_len(&TestTaxonomy::Personal.data_class());
+        assert_eq!(
+            passthrough_len, None,
+            "Passthrough redactor should return None"
+        );
+
+        // Test exact_len for fallback redactor (Insert mode) - should return None
+        let unknown_class = UnknownSensitivity::<()>::data_class();
+        let fallback_len = engine.exact_len(&unknown_class);
+        assert_eq!(fallback_len, None, "Insert redactor should return None");
+
+        // Verify the actual behavior matches the exact_len hint
+        let sensitive_data = Sensitive::new("test".to_string());
+        let erase_result = collect_output(&engine, &sensitive_data);
+        assert_eq!(
+            erase_result.len(),
+            erase_len.unwrap_or(0),
+            "Actual output length should match exact_len hint"
+        );
+
+        let unknown_data = UnknownSensitivity::new("test".to_string());
+        let fallback_result = collect_output(&engine, &unknown_data);
+        // For Insert mode, the output is always "REDACTED" regardless of input
+        assert_eq!(fallback_result, "REDACTED");
+    }
 }

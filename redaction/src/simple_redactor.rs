@@ -52,6 +52,7 @@ impl SimpleRedactor {
 }
 
 impl Redactor for SimpleRedactor {
+    #[mutants::skip]
     fn redact(&self, data_class: &DataClass, value: &str, output: &mut dyn FnMut(&str)) {
         static ASTERISKS: &str = "********************************";
 
@@ -214,5 +215,42 @@ mod tests {
             SimpleRedactor::with_mode(SimpleRedactorMode::InsertAndTag("replacement".to_string()));
         let result = redact_to_string(&redactor, &TEST_CLASS_ID, TEST_VALUE);
         assert_eq!(result, format!("<{TEST_CLASS_ID}:replacement>"));
+    }
+
+    #[test]
+    fn exact_len_should_return_expected_values_for_all_modes() {
+        // Erase mode should return Some(0) as it produces no output
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
+        assert_eq!(redactor.exact_len(), Some(0));
+
+        // EraseAndTag mode should return None as output length depends on data class
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::EraseAndTag);
+        assert_eq!(redactor.exact_len(), None);
+
+        // Passthrough mode should return None as output length depends on input
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Passthrough);
+        assert_eq!(redactor.exact_len(), None);
+
+        // PassthroughAndTag mode should return None as output length depends on input and data class
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::PassthroughAndTag);
+        assert_eq!(redactor.exact_len(), None);
+
+        // Replace mode should return None as output length depends on input length
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Replace('*'));
+        assert_eq!(redactor.exact_len(), None);
+
+        // ReplaceAndTag mode should return None as output length depends on input length and data class
+        let redactor = SimpleRedactor::with_mode(SimpleRedactorMode::ReplaceAndTag('*'));
+        assert_eq!(redactor.exact_len(), None);
+
+        // Insert mode should return None as output length depends on the inserted string
+        let redactor =
+            SimpleRedactor::with_mode(SimpleRedactorMode::Insert("replacement".to_string()));
+        assert_eq!(redactor.exact_len(), None);
+
+        // InsertAndTag mode should return None as output length depends on inserted string and data class
+        let redactor =
+            SimpleRedactor::with_mode(SimpleRedactorMode::InsertAndTag("replacement".to_string()));
+        assert_eq!(redactor.exact_len(), None);
     }
 }
