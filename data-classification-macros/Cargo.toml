@@ -1,0 +1,27 @@
+[package]
+name = "data-classification-macros"
+version.workspace = true
+edition.workspace = true
+categories.workspace = true
+keywords.workspace = true
+repository.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+rust-version.workspace = true
+description = "Procedural macros for data classification"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-crate = "3.3.0"
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+syn = { version = "2.0.104", default-features = false, features = ["derive", "parsing", "printing"] }
+
+[dev-dependencies]
+syn = { version = "2.0.104" }
+
+[lints]
+workspace = true

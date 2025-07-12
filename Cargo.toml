@@ -1,7 +1,8 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "data-classification",
+    "data-classification-macros",
     "redaction",
 ]
 

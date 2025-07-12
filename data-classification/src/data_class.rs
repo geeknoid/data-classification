@@ -1,32 +1,36 @@
 use core::fmt::Display;
+use std::borrow::Cow;
 
 /// The identity of a well-known data class.
 ///
 /// Each data class has a name, which is unique in the context of a specific named taxonomy.
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DataClass {
-    taxonomy: &'static str,
-    name: &'static str,
+    taxonomy: Cow<'static, str>,
+    name: Cow<'static, str>,
 }
 
 impl DataClass {
-    /// Creates a new data class.
+    /// Creates a new data class instance.
     #[must_use]
     pub const fn new(taxonomy: &'static str, name: &'static str) -> Self {
-        Self { taxonomy, name }
+        Self {
+            taxonomy: Cow::Borrowed(taxonomy),
+            name: Cow::Borrowed(name),
+        }
     }
 
     /// Returns the taxonomy of the data class.
     #[must_use]
-    pub const fn taxonomy(&self) -> &'static str {
-        self.taxonomy
+    pub fn taxonomy(&self) -> &str {
+        &self.taxonomy
     }
 
     /// Returns the name of the data class.
     #[must_use]
-    pub const fn name(&self) -> &'static str {
-        self.name
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -95,14 +99,13 @@ mod tests {
         assert_eq!(hash1, hash2);
         assert_ne!(hash1, hash3);
     }
-    /*
-       #[test]
-       #[cfg(feature = "serde")]
-       fn serde_should_serialize_and_deserialize() {
-           let data_class = DataClass::new("taxonomy", "class");
-           let serialized = serde_json::to_string(&data_class).unwrap();
-           let deserialized: DataClass = serde_json::from_str(&serialized).unwrap();
-           assert_eq!(data_class, deserialized);
-       }
-    */
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_should_serialize_and_deserialize() {
+        let data_class = DataClass::new("taxonomy", "class");
+        let serialized = serde_json::to_string(&data_class).unwrap();
+        let deserialized: DataClass = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(data_class, deserialized);
+    }
 }
