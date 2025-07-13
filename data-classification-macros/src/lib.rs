@@ -71,6 +71,7 @@ fn pascal_to_snake_case(s: &str) -> String {
 
 /// Determine the path to the `data-classification` crate
 #[cfg(not(test))]
+#[mutants::skip]
 fn find_crate(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
     let found_crate = proc_macro_crate::crate_name("data-classification")
         .map_err(|e| syn::Error::new(input.ident.span(), e))?;
@@ -283,6 +284,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
 
 /// Placeholder docs, real ones in `data_classification` crate.
 #[proc_macro_attribute]
+#[mutants::skip]
 pub fn taxonomy(
     attr_args: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
