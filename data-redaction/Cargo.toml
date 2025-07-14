@@ -1,5 +1,5 @@
 [package]
-name = "redaction"
+name = "data_redaction"
 description = "General-purpose data redaction for compliant telemetry."
 readme.workspace = true
 authors.workspace = true
@@ -12,7 +12,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-xxhash-rust = { version = "0.8.12", optional = true, features = ["xxh3"] }
+xxhash-rust = { version = "0.8.15", optional = true, features = ["xxh3"] }
 data-classification = { version = "0.1.0", path = "../data-classification", default-features = false }
 mutants = { version = "0.0.3" }
 

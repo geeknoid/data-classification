@@ -5,14 +5,12 @@ use data_classification::DataClass;
 use std::collections::HashMap;
 
 /// A builder for creating a [`RedactionEngine`].
-pub struct RedactionEngineBuilder<'a> {
-    redactors: HashMap<DataClass, &'a (dyn Redactor + 'a)>,
-    fallback: &'a (dyn Redactor + 'a),
+pub struct RedactionEngineBuilder {
+    redactors: HashMap<DataClass, Box<dyn Redactor>>,
+    fallback: Box<dyn Redactor>,
 }
 
-static ERASING_REDACTOR: SimpleRedactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
-
-impl<'a> RedactionEngineBuilder<'a> {
+impl RedactionEngineBuilder {
     /// Creates a new instance of `RedactionEngineBuilder`.
     ///
     /// This is initialized with no registered redactors and a fallback redactor that erases the input.
@@ -20,7 +18,7 @@ impl<'a> RedactionEngineBuilder<'a> {
     pub fn new() -> Self {
         Self {
             redactors: HashMap::new(),
-            fallback: &ERASING_REDACTOR,
+            fallback: Box::new(SimpleRedactor::with_mode(SimpleRedactorMode::Erase)),
         }
     }
 
@@ -31,7 +29,7 @@ impl<'a> RedactionEngineBuilder<'a> {
     pub fn add_class_redactor(
         mut self,
         data_class: &DataClass,
-        redactor: &'a (dyn Redactor + 'a),
+        redactor: Box<dyn Redactor>,
     ) -> Self {
         _ = self.redactors.insert(data_class.clone(), redactor);
 
@@ -43,25 +41,25 @@ impl<'a> RedactionEngineBuilder<'a> {
     ///
     /// The default fallback is to use an `ErasingRedactor`, which simply erases the original string.
     #[must_use]
-    pub fn set_fallback_redactor(mut self, redactor: &'a (dyn Redactor + 'a)) -> Self {
+    pub fn set_fallback_redactor(mut self, redactor: Box<dyn Redactor>) -> Self {
         self.fallback = redactor;
         self
     }
 
     /// Builds the `RedactionEngine`.
     #[must_use]
-    pub fn build(self) -> RedactionEngine<'a> {
+    pub fn build(self) -> RedactionEngine {
         RedactionEngine::new(self.redactors, self.fallback)
     }
 }
 
-impl Default for RedactionEngineBuilder<'_> {
+impl Default for RedactionEngineBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Debug for RedactionEngineBuilder<'_> {
+impl Debug for RedactionEngineBuilder {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_list().entries(self.redactors.keys()).finish()
     }
@@ -113,8 +111,8 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, &redactor1)
-            .add_class_redactor(&data_class2, &redactor2);
+            .add_class_redactor(&data_class1, Box::new(redactor1))
+            .add_class_redactor(&data_class2, Box::new(redactor2));
 
         let engine = builder.build();
         test_redaction(&engine, &data_class1, "sensitive data", "XX");
@@ -133,9 +131,9 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, &redactor1)
-            .add_class_redactor(&data_class2, &redactor2)
-            .set_fallback_redactor(&redactor3);
+            .add_class_redactor(&data_class1, Box::new(redactor1))
+            .add_class_redactor(&data_class2, Box::new(redactor2))
+            .set_fallback_redactor(Box::new(redactor3));
 
         let engine = builder.build();
         test_redaction(&engine, &data_class1, "sensitive data", "XX");
@@ -152,8 +150,8 @@ mod tests {
         let data_class2 = DataClass::new("taxonomy", "class2");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, &redactor1)
-            .add_class_redactor(&data_class2, &redactor2);
+            .add_class_redactor(&data_class1, Box::new(redactor1))
+            .add_class_redactor(&data_class2, Box::new(redactor2));
 
         let debug_output = format!("{builder:?}");
 

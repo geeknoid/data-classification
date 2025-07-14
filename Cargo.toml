@@ -3,7 +3,7 @@ resolver = "3"
 members = [
     "data-classification",
     "data-classification-macros",
-    "redaction",
+    "data-redaction",
 ]
 
 [workspace.package]
