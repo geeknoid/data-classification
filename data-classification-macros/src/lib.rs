@@ -229,16 +229,8 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
             where
                 T: core::fmt::Display,
             {
-                #[expect(clippy::string_slice, reason = "No problem with UTF-8 here")]
                 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    static ASTERISKS: &str = "********************************";
-
-                    let len = self.payload.to_string().len();
-                    if len < ASTERISKS.len() {
-                        f.write_fmt(::core::format_args!("{0}<{1}>", #variant_name_str, &ASTERISKS[0..len]))
-                    } else {
-                        f.write_fmt(::core::format_args!("{0}<{1}>", #variant_name_str, "*".repeat(len)))
-                    }
+                    f.write_fmt(::core::format_args!("{0}<REDACTED>", #variant_name_str))
                 }
             }
 
@@ -247,7 +239,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                 T: core::fmt::Debug,
             {
                 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    f.write_fmt(::core::format_args!("{}(...)", #variant_name_str))
+                    f.write_fmt(::core::format_args!("{}<REDACTED>", #variant_name_str))
                 }
             }
 

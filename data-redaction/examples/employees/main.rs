@@ -21,7 +21,7 @@
 //! * Create a custom taxonomy. Normally, an application would typically use a taoxnomy provided by their company to be
 //!   used across multiple applications, but here we're doing it stand-alone for the sake of the example.
 //!
-//! * Initialize a RedactionEngine. The engine controls which redaction logic to apply to individual classes of data.
+//! * Initialize a `RedactionEngine`. The engine controls which redaction logic to apply to individual classes of data.
 //!   Although this is being hardcoded in this example, the specific redaction algorithm to use for a given data class
 //!   should typically be control through external configuration state that the application consumes.
 //!
@@ -35,12 +35,14 @@ mod employee;
 mod example_taxonomy;
 mod logging;
 
-use data_redaction::{xxH3Redactor, RedactionEngineBuilder};
-use std::fs::{OpenOptions, File};
-use std::io::{self, Write, BufReader};
-use example_taxonomy::*;
-use employee::*;
-use logging::{set_redaction_engine_for_logging, log};
+use data_redaction::{RedactionEngineBuilder, xxH3Redactor};
+use employee::Employee;
+use example_taxonomy::{
+    ExampleTaxonomy, OrganizationallyIdentifiableInformation, PersonallyIdentifiableInformation,
+};
+use logging::{log, set_redaction_engine_for_logging};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufReader, Write};
 
 fn main() {
     // First step, we create a redaction engine that prescribes how to redact individual data classes.
@@ -57,8 +59,8 @@ fn main() {
         .add_class_redactor(
             &ExampleTaxonomy::OrganizationallyIdentifiableInformation.data_class(),
             Box::new(data_redaction::SimpleRedactor::with_mode(
-                data_redaction::SimpleRedactorMode::PassthroughAndTag),
-            )
+                data_redaction::SimpleRedactorMode::PassthroughAndTag,
+            )),
         )
         .build();
 
@@ -69,14 +71,19 @@ fn main() {
     app_loop();
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "this is a demo app, so we print to stdout"
+)]
 fn app_loop() {
     let json_path = "employees.json";
-    let mut employees: Vec<Employee> = if let Ok(file) = File::open(json_path) {
-        let reader = BufReader::new(file);
-        serde_json::from_reader(reader).unwrap_or_default()
-    } else {
-        Vec::new()
-    };
+    let mut employees: Vec<Employee> = File::open(json_path).map_or_else(
+        |_| Vec::new(),
+        |file| {
+            let reader = BufReader::new(file);
+            serde_json::from_reader(reader).unwrap_or_default()
+        },
+    );
 
     loop {
         println!("Enter employee info (or type 'quit' to exit):");
@@ -85,7 +92,9 @@ fn app_loop() {
         io::stdout().flush().unwrap();
         _ = io::stdin().read_line(&mut input).unwrap();
         let name = input.trim().to_string();
-        if name.eq_ignore_ascii_case("quit") { break; }
+        if name.eq_ignore_ascii_case("quit") {
+            break;
+        }
         input.clear();
 
         print!("Address: ");
@@ -103,23 +112,27 @@ fn app_loop() {
         print!("Age: ");
         io::stdout().flush().unwrap();
         _ = io::stdin().read_line(&mut input).unwrap();
-        let age: u32 = match input.trim().parse() {
-            Ok(a) => a,
-            Err(_) => {
-                println!("Invalid age, try again.");
-                continue;
-            }
+        let age: u32 = if let Ok(a) = input.trim().parse() {
+            a
+        } else {
+            println!("Invalid age, try again.");
+            continue;
         };
 
         let employee = Employee {
             name: PersonallyIdentifiableInformation::new(name),
             address: PersonallyIdentifiableInformation::new(address),
-            employee_id: OrganizationallyIdentifiableInformation::new(employee_id),
+            id: OrganizationallyIdentifiableInformation::new(employee_id),
             age,
         };
         employees.push(employee.clone());
 
-        let file = OpenOptions::new().write(true).create(true).truncate(true).open(json_path).unwrap();
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(json_path)
+            .unwrap();
         serde_json::to_writer_pretty(file, &employees).unwrap();
         println!("Employee added.\n");
 
@@ -131,7 +144,7 @@ fn app_loop() {
         log!(event = "Employee created",
              name:@ = employee.name,
              address:@ = employee.address,
-             employee_id:@ = employee.employee_id,
+             employee_id:@ = employee.id,
              age = employee.age);
     }
 }

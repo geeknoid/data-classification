@@ -1,4 +1,6 @@
-use crate::example_taxonomy::*;
+use crate::example_taxonomy::{
+    OrganizationallyIdentifiableInformation, PersonallyIdentifiableInformation,
+};
 use serde::{Deserialize, Serialize};
 
 /// Holds info about a single corporate employee.
@@ -6,6 +8,6 @@ use serde::{Deserialize, Serialize};
 pub struct Employee {
     pub name: PersonallyIdentifiableInformation<String>,
     pub address: PersonallyIdentifiableInformation<String>,
-    pub employee_id: OrganizationallyIdentifiableInformation<String>,
+    pub id: OrganizationallyIdentifiableInformation<String>,
     pub age: u32,
 }

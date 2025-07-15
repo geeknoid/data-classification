@@ -6,8 +6,8 @@ use std::collections::HashMap;
 
 /// A builder for creating a [`RedactionEngine`].
 pub struct RedactionEngineBuilder {
-    redactors: HashMap<DataClass, Box<dyn Redactor>>,
-    fallback: Box<dyn Redactor>,
+    redactors: HashMap<DataClass, Box<dyn Redactor + Send + Sync>>,
+    fallback: Box<dyn Redactor + Send + Sync>,
 }
 
 impl RedactionEngineBuilder {
@@ -29,7 +29,7 @@ impl RedactionEngineBuilder {
     pub fn add_class_redactor(
         mut self,
         data_class: &DataClass,
-        redactor: Box<dyn Redactor>,
+        redactor: Box<dyn Redactor + Send + Sync>,
     ) -> Self {
         _ = self.redactors.insert(data_class.clone(), redactor);
 
@@ -41,7 +41,7 @@ impl RedactionEngineBuilder {
     ///
     /// The default fallback is to use an `ErasingRedactor`, which simply erases the original string.
     #[must_use]
-    pub fn set_fallback_redactor(mut self, redactor: Box<dyn Redactor>) -> Self {
+    pub fn set_fallback_redactor(mut self, redactor: Box<dyn Redactor + Send + Sync>) -> Self {
         self.fallback = redactor;
         self
     }

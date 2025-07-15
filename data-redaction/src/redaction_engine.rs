@@ -49,15 +49,15 @@ use std::collections::HashMap;
 /// # }
 /// ```
 pub struct RedactionEngine {
-    redactors: HashMap<DataClass, Box<dyn Redactor>>,
-    fallback: Box<dyn Redactor>,
+    redactors: HashMap<DataClass, Box<dyn Redactor + Send + Sync>>,
+    fallback: Box<dyn Redactor + Send + Sync>,
 }
 
 impl RedactionEngine {
     #[must_use]
     pub(crate) fn new(
-        mut redactors: HashMap<DataClass, Box<dyn Redactor>>,
-        fallback: Box<dyn Redactor>,
+        mut redactors: HashMap<DataClass, Box<dyn Redactor + Send + Sync>>,
+        fallback: Box<dyn Redactor + Send + Sync>,
     ) -> Self {
         redactors.shrink_to_fit();
 
@@ -146,7 +146,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -160,7 +160,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -176,7 +176,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Replace('X'));
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -192,7 +192,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -208,7 +208,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Replace('?'));
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -225,7 +225,7 @@ mod tests {
         let hash_redactor = create_test_redactor(SimpleRedactorMode::Replace('#'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
         _ = redactors.insert(TestTaxonomy::Personal.data_class(), Box::new(hash_redactor));
 
@@ -248,7 +248,7 @@ mod tests {
         let passthrough_redactor = create_test_redactor(SimpleRedactorMode::Passthrough);
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(insert_redactor));
         _ = redactors.insert(
             UnknownSensitivity::<()>::data_class(),
@@ -275,7 +275,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -291,7 +291,7 @@ mod tests {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
@@ -306,7 +306,7 @@ mod tests {
         let passthrough_redactor = create_test_redactor(SimpleRedactorMode::Passthrough);
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(
             Sensitive::<()>::data_class(),
             Box::new(passthrough_redactor),
@@ -366,7 +366,7 @@ mod tests {
         let hash_redactor = create_test_redactor(SimpleRedactorMode::Replace('#'));
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(asterisk_redactor));
         _ = redactors.insert(TestTaxonomy::Personal.data_class(), Box::new(hash_redactor));
 
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn test_debug_trait_with_empty_redactors() {
         let fallback_redactor = create_test_redactor(SimpleRedactorMode::Erase);
-        let redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
 
         let engine = RedactionEngine::new(redactors, Box::new(fallback_redactor));
 
@@ -408,7 +408,7 @@ mod tests {
         let fallback_redactor =
             create_test_redactor(SimpleRedactorMode::Insert("REDACTED".to_string()));
 
-        let mut redactors = HashMap::<DataClass, Box<dyn Redactor>>::new();
+        let mut redactors = HashMap::<DataClass, Box<dyn Redactor + Send + Sync>>::new();
         _ = redactors.insert(Sensitive::<()>::data_class(), Box::new(erase_redactor));
         _ = redactors.insert(Insensitive::<()>::data_class(), Box::new(replace_redactor));
         _ = redactors.insert(
