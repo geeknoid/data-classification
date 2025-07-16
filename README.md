@@ -50,14 +50,10 @@ Before continuing, it's important to understand a few concepts:
 
 ## Traits
 
-These crates are built around three traits:
+These crates are built around two traits:
 
 * The `Classified` trait is used to mark types that hold sensitive data. The trait exposes
   explicit mechanisms to access the data in a safe and auditable way.
-
-* The `Extract` trait is used to extract sensitive data from a container. It
-  works a lot like the `Display` trait but instead of producing text
-  intended to be displayed to a user, it produces text intended for redaction.
 
 * The `Redactor` trait represents types that know how to redact data. Different redactors
   do different transformations to the data such as replacing it with asterisks or replacing it

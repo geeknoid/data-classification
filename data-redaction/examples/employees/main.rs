@@ -54,13 +54,13 @@ fn main() {
     let engine = RedactionEngineBuilder::new()
         .add_class_redactor(
             &ExampleTaxonomy::PersonallyIdentifiableInformation.data_class(),
-            Box::new(xxH3Redactor::with_secret(vec![0; 192])),
+            xxH3Redactor::with_secret(vec![0; 192]),
         )
         .add_class_redactor(
             &ExampleTaxonomy::OrganizationallyIdentifiableInformation.data_class(),
-            Box::new(data_redaction::SimpleRedactor::with_mode(
+            data_redaction::SimpleRedactor::with_mode(
                 data_redaction::SimpleRedactorMode::PassthroughAndTag,
-            )),
+            ),
         )
         .build();
 
@@ -139,9 +139,11 @@ fn app_loop() {
         // Here we log the employee creation event. OUr little logging framework takes as input a set of name/value pairs that provide
         // a structured log record.
         //
-        // By default, the provided values are serialized to string using the `Display` trait. We can use the `:?` syntax to serialize a value
-        // using the `Debug` trait and use `:@` to use the `Extract` trait which will redact the data before emitting the log record.
-        log!(event = "Employee created",
+        // For each value, you can control which trait is used to format the value into a string:
+        //   `name` - formats the value with the `Display` trait.
+        //   `name:?` - formats the value with the `Debug` trait.
+        //   `mame:@` - formats the value with the `Display` trait and redacts it.
+        log!(event:? = "Employee created",
              name:@ = employee.name,
              address:@ = employee.address,
              employee_id:@ = employee.id,

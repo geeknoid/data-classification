@@ -23,14 +23,8 @@
 //!
 //! # Traits
 //!
-//! This crate is built around two traits:
-//!
-//! * The [`Classified`] trait is used to mark types that hold sensitive data. The trait exposes
-//!   explicit mechanisms to access the data in a safe and auditable way.
-//!
-//! * The [`Extract`] trait is used to extract sensitive data from a container. It
-//!   works a lot like the [`Display`](std::fmt::Display) trait, but instead of producing text
-//!   intended to be displayed to a user, it produces text intended for redaction.
+//! This crate is built around the [`Classified`] trait is used to mark types that hold sensitive data. The trait exposes
+//! explicit mechanisms to access the data in a safe and auditable way.
 //!
 //! # Data Classes
 //!
@@ -84,13 +78,9 @@
 mod classified;
 pub mod core_taxonomy;
 mod data_class;
-mod extract;
-mod extractor;
 
 pub use classified::Classified;
 pub use data_class::DataClass;
-pub use extract::Extract;
-pub use extractor::Extractor;
 
 /// Generates implementation logic and types to expose a data taxonomy.
 ///

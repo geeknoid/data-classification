@@ -10,7 +10,7 @@ use crate::DataClass;
 /// # Example
 ///
 /// ```rust
-/// use data_classification::{Classified, DataClass, Extract, Extractor};
+/// use data_classification::{Classified, DataClass};
 ///
 /// struct Person {
 ///    name: String,
@@ -48,13 +48,6 @@ use crate::DataClass;
 ///
 ///     fn data_class() -> DataClass {
 ///         DataClass::new("example_taxonomy", "classified_person")
-///     }
-/// }
-///
-/// // implement this trait to enable the type to be used with redaction.
-/// impl Extract for ClassifiedPerson {
-///     fn extract(&self, extractor: Extractor) {
-///         extractor.write_str(&Self::data_class(), &self.person.name);
 ///     }
 /// }
 ///  ```

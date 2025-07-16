@@ -195,18 +195,6 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                 }
             }
 
-            impl<T> #data_classification_path::Extract for #variant_name<T>
-            where
-                T: core::fmt::Display,
-            {
-                fn extract(&self, extractor: #data_classification_path::Extractor) {
-                    extractor.write_str(
-                        &Self::data_class(),
-                        self.payload.to_string().as_str(),
-                    )
-                }
-            }
-
             impl<T> #data_classification_path::Classified<T> for #variant_name<T> {
                 fn declassify(self) -> T {
                     Self::declassify(self)

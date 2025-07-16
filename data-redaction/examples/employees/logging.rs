@@ -1,4 +1,5 @@
-use data_classification::Extract;
+use core::fmt::Display;
+use data_classification::Classified;
 use data_redaction::RedactionEngine;
 use once_cell::sync::OnceCell;
 
@@ -8,10 +9,14 @@ pub fn set_redaction_engine_for_logging(engine: RedactionEngine) {
     REDACTION_ENGINE.set(engine).unwrap();
 }
 
-pub fn serialize_sensitive(value: &dyn Extract) -> String {
+pub fn classified_display<C, T>(value: &C) -> String
+where
+    C: Classified<T>,
+    T: Display,
+{
     let engine = REDACTION_ENGINE.get().unwrap();
     let mut output = String::new();
-    engine.redact(value, |s| output.push_str(s));
+    engine.display_redacted(value, |s| output.push_str(s));
     output
 }
 
@@ -20,8 +25,12 @@ macro_rules! log {
         format!("{}={}", stringify!($name), $value)
     };
 
+    (@fmt ($name:ident):? = $value:expr) => {
+        format!("{}={:?}", stringify!($name), $value)
+    };
+
     (@fmt ($name:ident):@ = $value:expr) => {
-        format!("{}={}", stringify!($name), crate::logging::serialize_sensitive(&$value))
+        format!("{}={}", stringify!($name), crate::logging::classified_display(&$value))
     };
 
     ($($name:ident $(: $kind:tt)? = $value:expr),* $(,)?) => {

@@ -29,10 +29,11 @@ impl RedactionEngineBuilder {
     pub fn add_class_redactor(
         mut self,
         data_class: &DataClass,
-        redactor: Box<dyn Redactor + Send + Sync>,
+        redactor: impl Redactor + Send + Sync + 'static,
     ) -> Self {
-        _ = self.redactors.insert(data_class.clone(), redactor);
-
+        _ = self
+            .redactors
+            .insert(data_class.clone(), Box::new(redactor));
         self
     }
 
@@ -41,8 +42,11 @@ impl RedactionEngineBuilder {
     ///
     /// The default fallback is to use an `ErasingRedactor`, which simply erases the original string.
     #[must_use]
-    pub fn set_fallback_redactor(mut self, redactor: Box<dyn Redactor + Send + Sync>) -> Self {
-        self.fallback = redactor;
+    pub fn set_fallback_redactor(
+        mut self,
+        redactor: impl Redactor + Send + Sync + 'static,
+    ) -> Self {
+        self.fallback = Box::new(redactor);
         self
     }
 
@@ -76,7 +80,7 @@ mod tests {
         expected: &str,
     ) {
         let mut output = String::new();
-        engine.redact_as_class(data_class, input, |s| output.push_str(s));
+        engine.redact(data_class, input, |s| output.push_str(s));
         assert_eq!(output, expected);
     }
 
@@ -111,8 +115,8 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, Box::new(redactor1))
-            .add_class_redactor(&data_class2, Box::new(redactor2));
+            .add_class_redactor(&data_class1, redactor1)
+            .add_class_redactor(&data_class2, redactor2);
 
         let engine = builder.build();
         test_redaction(&engine, &data_class1, "sensitive data", "XX");
@@ -131,9 +135,9 @@ mod tests {
         let data_class3 = DataClass::new("taxonomy", "class3");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, Box::new(redactor1))
-            .add_class_redactor(&data_class2, Box::new(redactor2))
-            .set_fallback_redactor(Box::new(redactor3));
+            .add_class_redactor(&data_class1, redactor1)
+            .add_class_redactor(&data_class2, redactor2)
+            .set_fallback_redactor(redactor3);
 
         let engine = builder.build();
         test_redaction(&engine, &data_class1, "sensitive data", "XX");
@@ -150,8 +154,8 @@ mod tests {
         let data_class2 = DataClass::new("taxonomy", "class2");
 
         let builder = RedactionEngineBuilder::new()
-            .add_class_redactor(&data_class1, Box::new(redactor1))
-            .add_class_redactor(&data_class2, Box::new(redactor2));
+            .add_class_redactor(&data_class1, redactor1)
+            .add_class_redactor(&data_class2, redactor2);
 
         let debug_output = format!("{builder:?}");
 

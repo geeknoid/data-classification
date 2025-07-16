@@ -51,14 +51,14 @@
 //!
 //!     // Create the redaction engine. This is typically done once when the application starts.
 //!     let engine = RedactionEngineBuilder::new()
-//!         .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), Box::new(asterisk_redactor))
-//!         .set_fallback_redactor(Box::new(erasing_redactor))
+//!         .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), asterisk_redactor)
+//!         .set_fallback_redactor(erasing_redactor)
 //!         .build();
 //!
 //!     let mut output_buffer = String::new();
 //!
 //!     // Redact the sensitive data in the person's name using the redaction engine.
-//!     engine.redact(&person.name, |s| output_buffer.write_str(s).unwrap());
+//!     engine.display_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
 //!
 //!     // check that the data in the output buffer has indeed been redacted as expected.
 //!     assert_eq!(output_buffer, "********");

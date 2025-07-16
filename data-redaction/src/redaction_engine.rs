@@ -1,6 +1,7 @@
 use crate::Redactor;
 use core::fmt::Debug;
-use data_classification::{DataClass, Extract, Extractor};
+use core::fmt::Display;
+use data_classification::{Classified, DataClass};
 use std::collections::HashMap;
 
 /// Lets you apply redaction to classified data.
@@ -32,13 +33,13 @@ use std::collections::HashMap;
 ///
 ///     // Create the redaction engine. This is typically done once when the application starts.
 ///     let engine = RedactionEngineBuilder::new()
-///         .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), Box::new(asterisk_redactor))
-///         .set_fallback_redactor(Box::new(erasing_redactor))
+///         .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), asterisk_redactor)
+///         .set_fallback_redactor(erasing_redactor)
 ///         .build();
 ///
 ///     let mut output_buffer = String::new();
 ///
-///     engine.redact(&person.name, |s| output_buffer.write_str(s).unwrap());
+///     engine.display_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
 ///
 ///     // check that the data in the output buffer has indeed been redacted as expected.
 ///     assert_eq!(output_buffer, "********");
@@ -67,17 +68,32 @@ impl RedactionEngine {
         }
     }
 
-    /// Redacts some classified data, sending the results to the output callback.
-    pub fn redact(&self, value: &dyn Extract, mut output: impl FnMut(&str)) {
-        value.extract(Extractor::new(
-            &mut (move |data_class: &DataClass, value: &str| {
-                self.redact_as_class(data_class, value, &mut output);
-            }),
-        ));
+    /// Redacts the output of a classified value's [`Debug`] trait.
+    ///
+    /// Given a classified value whose payload implements the [`Debug`] trait, this method will
+    /// redact the output of that trait using the redactor registered for the data class of the value.
+    pub fn debug_redacted<C, T>(&self, value: &C, output: impl FnMut(&str))
+    where
+        C: Classified<T>,
+        T: Debug,
+    {
+        value.visit(|v| self.redact(&C::data_class(), format!("{v:?}"), output));
+    }
+
+    /// Redacts the output of a classified value's [`Display`] trait.
+    ///
+    /// Given a classified value whose payload implements the [`Display`] trait, this method will
+    /// redact the output of that trait using the redactor registered for the data class of the value.
+    pub fn display_redacted<C, T>(&self, value: &C, output: impl FnMut(&str))
+    where
+        C: Classified<T>,
+        T: Display,
+    {
+        value.visit(|v| self.redact(&C::data_class(), format!("{v}"), output));
     }
 
     /// Redacts a string with an explicit data classification, sending the results to the output callback.
-    pub fn redact_as_class(
+    pub fn redact(
         &self,
         data_class: &DataClass,
         value: impl AsRef<str>,
@@ -118,26 +134,27 @@ mod tests {
         Personal,
     }
 
-    // Helper function to create a simple test redactor
     fn create_test_redactor(mode: SimpleRedactorMode) -> SimpleRedactor {
         SimpleRedactor::with_mode(mode)
     }
 
-    // Helper function to collect redaction output into a string
-    fn collect_output(engine: &RedactionEngine, value: &dyn Extract) -> String {
+    fn collect_output<C, T>(engine: &RedactionEngine, value: &C) -> String
+    where
+        C: Classified<T>,
+        T: Display,
+    {
         let mut output = String::new();
-        engine.redact(value, |s| output.push_str(s));
+        engine.display_redacted(value, |s| output.push_str(s));
         output
     }
 
-    // Helper function to collect redaction output for explicit class
     fn collect_output_as_class(
         engine: &RedactionEngine,
         data_class: &DataClass,
         value: &str,
     ) -> String {
         let mut output = String::new();
-        engine.redact_as_class(data_class, value, |s| output.push_str(s));
+        engine.redact(data_class, value, |s| output.push_str(s));
         output
     }
 
@@ -318,7 +335,7 @@ mod tests {
         let mut call_count = 0;
         let mut total_output = String::new();
 
-        engine.redact(&sensitive_data, |s| {
+        engine.display_redacted(&sensitive_data, |s| {
             call_count += 1;
             total_output.push_str(s);
         });
@@ -340,18 +357,14 @@ mod tests {
         let asterisk_redactor = SimpleRedactor::new();
         let erasing_redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
 
-        // Create the redaction engine. This is typically done once when the application starts.
         let engine = RedactionEngineBuilder::new()
-            .add_class_redactor(
-                &CoreTaxonomy::Sensitive.data_class(),
-                Box::new(asterisk_redactor),
-            )
-            .set_fallback_redactor(Box::new(erasing_redactor))
+            .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), asterisk_redactor)
+            .set_fallback_redactor(erasing_redactor)
             .build();
 
         let mut output_buffer = String::new();
 
-        engine.redact(&person.name, |s| output_buffer.write_str(s).unwrap());
+        engine.display_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
 
         assert_eq!(
             None,
