@@ -1,4 +1,4 @@
-use data_classification::taxonomy;
+use data_privacy::taxonomy;
 
 #[taxonomy(example)]
 pub enum ExampleTaxonomy {

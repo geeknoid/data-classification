@@ -1,7 +1,7 @@
 use crate::Redactor;
+use crate::{Classified, DataClass};
 use core::fmt::Debug;
 use core::fmt::Display;
-use data_classification::{Classified, DataClass};
 use std::collections::HashMap;
 
 /// Lets you apply redaction to classified data.
@@ -14,8 +14,8 @@ use std::collections::HashMap;
 ///
 /// ```rust
 /// use std::fmt::Write;
-/// use data_classification::core_taxonomy::{CoreTaxonomy, Sensitive};
-/// use data_redaction::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
+/// use data_privacy::core_taxonomy::{CoreTaxonomy, Sensitive};
+/// use data_privacy::{SimpleRedactor, SimpleRedactorMode, Redactor, RedactionEngineBuilder};
 ///
 /// struct Person {
 ///     name: Sensitive<String>, // a bit of sensitive data we should not leak in logs
@@ -122,12 +122,10 @@ impl Debug for RedactionEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core_taxonomy::{CoreTaxonomy, Insensitive, Sensitive, UnknownSensitivity};
+    use crate::taxonomy;
     use crate::{RedactionEngineBuilder, SimpleRedactor, SimpleRedactorMode};
     use core::fmt::Write;
-    use data_classification::core_taxonomy::{
-        CoreTaxonomy, Insensitive, Sensitive, UnknownSensitivity,
-    };
-    use data_classification::taxonomy;
 
     #[taxonomy(test, serde = false)]
     enum TestTaxonomy {

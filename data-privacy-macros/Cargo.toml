@@ -1,5 +1,5 @@
 [package]
-name = "data-classification-macros"
+name = "data-privacy-macros"
 version.workspace = true
 edition.workspace = true
 categories.workspace = true
@@ -9,7 +9,7 @@ license.workspace = true
 authors.workspace = true
 readme.workspace = true
 rust-version.workspace = true
-description = "Procedural macros for data classification"
+description = "Procedural macros for data privacy."
 
 [lib]
 proc-macro = true

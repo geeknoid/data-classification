@@ -10,7 +10,7 @@ use crate::DataClass;
 /// # Example
 ///
 /// ```rust
-/// use data_classification::{Classified, DataClass};
+/// use data_privacy::{Classified, DataClass};
 ///
 /// struct Person {
 ///    name: String,

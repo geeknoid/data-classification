@@ -1,17 +1,16 @@
 [workspace]
 resolver = "3"
 members = [
-    "data-classification",
-    "data-classification-macros",
-    "data-redaction",
+    "data-privacy",
+    "data-privacy-macros",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-categories = ["data-classification", "data-annotation", "data-protection"]
+categories = ["data-privacy", "data-annotation", "data-protection"]
 keywords = ["compliance", "classification", "privacy"]
-repository = "https://github.com/geeknoid/data-classification"
+repository = "https://github.com/geeknoid/data-privacy"
 license = "MIT"
 authors = ["Martin Taillefer <martin@taillefer.org>"]
 readme = "README.md"

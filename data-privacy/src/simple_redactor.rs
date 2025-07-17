@@ -1,5 +1,5 @@
+use crate::DataClass;
 use crate::Redactor;
-use data_classification::DataClass;
 
 /// Mode of operation for the `SimpleRedactor`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

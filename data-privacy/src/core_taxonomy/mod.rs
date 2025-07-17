@@ -1,6 +1,6 @@
 //! A simple data taxonomy with universal data classes.
 
-use data_classification_macros::taxonomy;
+use data_privacy_macros::taxonomy;
 
 /// A simple data taxonomy with universal data classes.
 #[cfg_attr(feature = "serde", taxonomy(core, serde = true))]

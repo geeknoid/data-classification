@@ -18,7 +18,7 @@
 //!
 //! In this example, we do the following:
 //!
-//! * Create a custom taxonomy. Normally, an application would typically use a taoxnomy provided by their company to be
+//! * Create a custom taxonomy. Normally, an application would typically use a taxonomy provided by their company to be
 //!   used across multiple applications, but here we're doing it stand-alone for the sake of the example.
 //!
 //! * Initialize a `RedactionEngine`. The engine controls which redaction logic to apply to individual classes of data.
@@ -35,7 +35,7 @@ mod employee;
 mod example_taxonomy;
 mod logging;
 
-use data_redaction::{RedactionEngineBuilder, xxH3Redactor};
+use data_privacy::{RedactionEngineBuilder, xxH3Redactor};
 use employee::Employee;
 use example_taxonomy::{
     ExampleTaxonomy, OrganizationallyIdentifiableInformation, PersonallyIdentifiableInformation,
@@ -43,6 +43,9 @@ use example_taxonomy::{
 use logging::{log, set_redaction_engine_for_logging};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, Write};
+
+use data_privacy::Classified;
+use data_privacy::DataClass;
 
 fn main() {
     // First step, we create a redaction engine that prescribes how to redact individual data classes.
@@ -58,8 +61,8 @@ fn main() {
         )
         .add_class_redactor(
             &ExampleTaxonomy::OrganizationallyIdentifiableInformation.data_class(),
-            data_redaction::SimpleRedactor::with_mode(
-                data_redaction::SimpleRedactorMode::PassthroughAndTag,
+            data_privacy::SimpleRedactor::with_mode(
+                data_privacy::SimpleRedactorMode::PassthroughAndTag,
             ),
         )
         .build();

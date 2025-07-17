@@ -1,4 +1,4 @@
-use data_classification::DataClass;
+use crate::DataClass;
 
 /// Represents types that can redact data.
 pub trait Redactor {

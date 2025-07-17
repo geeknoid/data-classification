@@ -1,7 +1,7 @@
+use crate::DataClass;
 use crate::redaction_engine::RedactionEngine;
 use crate::{Redactor, SimpleRedactor, SimpleRedactorMode};
 use core::fmt::Debug;
-use data_classification::DataClass;
 use std::collections::HashMap;
 
 /// A builder for creating a [`RedactionEngine`].

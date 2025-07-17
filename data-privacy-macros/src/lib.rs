@@ -60,7 +60,7 @@ fn pascal_to_snake_case(s: &str) -> String {
             if i > 0 {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.extend(ch.to_lowercase());
         } else {
             result.push(*ch);
         }
@@ -69,11 +69,11 @@ fn pascal_to_snake_case(s: &str) -> String {
     result
 }
 
-/// Determine the path to the `data-classification` crate
+/// Determine the path to the `data-privacy` crate
 #[cfg(not(test))]
 #[mutants::skip]
 fn find_crate(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
-    let found_crate = proc_macro_crate::crate_name("data-classification")
+    let found_crate = proc_macro_crate::crate_name("data-privacy")
         .map_err(|e| syn::Error::new(input.ident.span(), e))?;
 
     Ok(match found_crate {
@@ -105,10 +105,10 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
     }
 
     #[cfg(test)]
-    let data_classification_path = quote!(crate);
+    let data_privacy_path = quote!(crate);
 
     #[cfg(not(test))]
-    let data_classification_path = find_crate(&input)?;
+    let data_privacy_path = find_crate(&input)?;
 
     let enum_name = &input.ident;
     let enum_vis = &input.vis;
@@ -190,14 +190,14 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
 
                 /// Returns the data class of the payload.
                 #[must_use]
-                pub const fn data_class() -> #data_classification_path::DataClass {
-                    #data_classification_path::DataClass::new(#taxonomy_name, #snake_case_name)
+                pub const fn data_class() -> #data_privacy_path::DataClass {
+                    #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_name)
                 }
             }
 
-            impl<T> #data_classification_path::Classified<T> for #variant_name<T> {
+            impl<T> #data_privacy_path::Classified<T> for #variant_name<T> {
                 fn declassify(self) -> T {
-                    Self::declassify(self)
+                    #variant_name::declassify(self)
                 }
 
                 fn visit(&self, operation: impl FnOnce(&T)) {
@@ -208,7 +208,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                     operation(&mut self.payload);
                 }
 
-                fn data_class() -> #data_classification_path::DataClass {
+                fn data_class() -> #data_privacy_path::DataClass {
                     Self::data_class()
                 }
             }
@@ -241,7 +241,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
         });
 
         match_arms.push(quote! {
-            #enum_name::#variant_name => #data_classification_path::DataClass::new(#taxonomy_name, #snake_case_name)
+            #enum_name::#variant_name => #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_name)
         });
     }
 
@@ -251,7 +251,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
         impl #enum_name {
             /// Returns the data class associated with the current variant.
             #[must_use]
-            pub fn data_class(&self) -> #data_classification_path::DataClass {
+            pub fn data_class(&self) -> #data_privacy_path::DataClass {
                 match self {
                     #(#match_arms),*
                 }
@@ -262,7 +262,10 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
     })
 }
 
-/// Placeholder docs, real ones in `data_classification` crate.
+#[expect(
+    missing_docs,
+    reason = "this is documented in the data-privacy reexport"
+)]
 #[proc_macro_attribute]
 #[mutants::skip]
 pub fn taxonomy(

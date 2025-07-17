@@ -1,6 +1,5 @@
 use core::fmt::Display;
-use data_classification::Classified;
-use data_redaction::RedactionEngine;
+use data_privacy::{Classified, RedactionEngine};
 use once_cell::sync::OnceCell;
 
 static REDACTION_ENGINE: OnceCell<RedactionEngine> = OnceCell::new();
