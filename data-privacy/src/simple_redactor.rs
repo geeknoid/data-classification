@@ -52,7 +52,7 @@ impl SimpleRedactor {
 }
 
 impl Redactor for SimpleRedactor {
-    #[mutants::skip]
+    #[cfg_attr(test, mutants::skip)]
     fn redact(&self, data_class: &DataClass, value: &str, output: &mut dyn FnMut(&str)) {
         static ASTERISKS: &str = "********************************";
 

@@ -42,7 +42,7 @@ use example_taxonomy::{
 };
 use logging::{log, set_redaction_engine_for_logging};
 use std::fs::{File, OpenOptions};
-use std::io::{self, BufReader, Write};
+use std::io::BufReader;
 
 use data_privacy::Classified;
 use data_privacy::DataClass;
@@ -86,68 +86,35 @@ fn app_loop() {
         },
     );
 
-    loop {
-        println!("Enter employee info (or type 'quit' to exit):");
-        let mut input = String::new();
-        print!("Name: ");
-        io::stdout().flush().unwrap();
-        _ = io::stdin().read_line(&mut input).unwrap();
-        let name = input.trim().to_string();
-        if name.eq_ignore_ascii_case("quit") {
-            break;
-        }
-        input.clear();
+    // pretend some UI collected some data, and we then create an Employee struct to hold this data
+    let employee = Employee {
+        name: PersonallyIdentifiableInformation::new("John Doe".to_string()),
+        address: PersonallyIdentifiableInformation::new("123 Elm Street".to_string()),
+        id: OrganizationallyIdentifiableInformation::new("12345-52".to_string()),
+        age: 33,
+    };
 
-        print!("Address: ");
-        io::stdout().flush().unwrap();
-        _ = io::stdin().read_line(&mut input).unwrap();
-        let address = input.trim().to_string();
-        input.clear();
+    employees.push(employee.clone());
 
-        print!("Employee ID: ");
-        io::stdout().flush().unwrap();
-        _ = io::stdin().read_line(&mut input).unwrap();
-        let employee_id = input.trim().to_string();
-        input.clear();
+    let file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(json_path)
+        .unwrap();
+    serde_json::to_writer_pretty(file, &employees).unwrap();
+    println!("Employee added.\n");
 
-        print!("Age: ");
-        io::stdout().flush().unwrap();
-        _ = io::stdin().read_line(&mut input).unwrap();
-        let age: u32 = if let Ok(a) = input.trim().parse() {
-            a
-        } else {
-            println!("Invalid age, try again.");
-            continue;
-        };
-
-        let employee = Employee {
-            name: PersonallyIdentifiableInformation::new(name),
-            address: PersonallyIdentifiableInformation::new(address),
-            id: OrganizationallyIdentifiableInformation::new(employee_id),
-            age,
-        };
-        employees.push(employee.clone());
-
-        let file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(json_path)
-            .unwrap();
-        serde_json::to_writer_pretty(file, &employees).unwrap();
-        println!("Employee added.\n");
-
-        // Here we log the employee creation event. OUr little logging framework takes as input a set of name/value pairs that provide
-        // a structured log record.
-        //
-        // For each value, you can control which trait is used to format the value into a string:
-        //   `name` - formats the value with the `Display` trait.
-        //   `name:?` - formats the value with the `Debug` trait.
-        //   `mame:@` - formats the value with the `Display` trait and redacts it.
-        log!(event:? = "Employee created",
-             name:@ = employee.name,
-             address:@ = employee.address,
-             employee_id:@ = employee.id,
-             age = employee.age);
-    }
+    // Here we log the employee creation event. Our little logging framework takes as input a set of name/value pairs that provide
+    // a structured log record.
+    //
+    // For each value, you can control which trait is used to format the value into a string:
+    //   `name` - formats the value with the `Display` trait.
+    //   `name:?` - formats the value with the `Debug` trait.
+    //   `mame:@` - formats the value with the `Display` trait and redacts it.
+    log!(event:? = "Employee created",
+         name:@ = employee.name,
+         address:@ = employee.address,
+         employee_id:@ = employee.id,
+         age = employee.age);
 }

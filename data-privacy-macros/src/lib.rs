@@ -71,7 +71,7 @@ fn pascal_to_snake_case(s: &str) -> String {
 
 /// Determine the path to the `data-privacy` crate
 #[cfg(not(test))]
-#[mutants::skip]
+#[cfg_attr(test, mutants::skip)]
 fn find_crate(input: &DeriveInput) -> Result<TokenStream, syn::Error> {
     let found_crate = proc_macro_crate::crate_name("data-privacy")
         .map_err(|e| syn::Error::new(input.ident.span(), e))?;
@@ -93,14 +93,14 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
     let Data::Enum(enum_data) = &input.data else {
         return Err(syn::Error::new_spanned(
             &input,
-            "taxonomy attribute can only be applied to enums",
+            "the taxonomy attribute can only be applied to enums",
         ));
     };
 
     if !input.generics.params.is_empty() {
         return Err(syn::Error::new_spanned(
             &input.generics,
-            "taxonomy attribute cannot be applied to generic enums",
+            "the taxonomy attribute cannot be applied to generic enums",
         ));
     }
 
@@ -122,14 +122,14 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
             _ => {
                 return Err(syn::Error::new_spanned(
                     variant,
-                    "taxonomy attribute only supports unit variants",
+                    "the taxonomy attribute only supports unit variants",
                 ));
             }
         }
 
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
-        let snake_case_name = pascal_to_snake_case(&variant_name.to_string());
+        let snake_case_variant_name = pascal_to_snake_case(&variant_name_str);
 
         let serde_impls = if macro_args.generate_serde {
             quote! {
@@ -164,7 +164,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
 
         let taxonomy_name = macro_args.taxonomy_name.to_string();
         variant_structs.push(quote! {
-            #[doc = concat!("A classified data container for the `", #snake_case_name, "` class of the `", #taxonomy_name, "` taxonomy.")]
+            #[doc = concat!("A classified data container for the `", #snake_case_variant_name, "` class of the `", #taxonomy_name, "` taxonomy.")]
             #[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
             #enum_vis struct #variant_name<T> {
                 payload: T,
@@ -191,7 +191,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                 /// Returns the data class of the payload.
                 #[must_use]
                 pub const fn data_class() -> #data_privacy_path::DataClass {
-                    #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_name)
+                    #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_variant_name)
                 }
             }
 
@@ -213,21 +213,12 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                 }
             }
 
-            impl<T> core::fmt::Display for #variant_name<T>
-            where
-                T: core::fmt::Display,
-            {
-                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    f.write_fmt(::core::format_args!("{0}<REDACTED>", #variant_name_str))
-                }
-            }
-
             impl<T> core::fmt::Debug for #variant_name<T>
             where
                 T: core::fmt::Debug,
             {
                 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    f.write_fmt(::core::format_args!("{}<REDACTED>", #variant_name_str))
+                    f.write_fmt(::core::format_args!("<{}/{}:REDACTED>", #taxonomy_name, #snake_case_variant_name))
                 }
             }
 
@@ -241,7 +232,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
         });
 
         match_arms.push(quote! {
-            #enum_name::#variant_name => #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_name)
+            #enum_name::#variant_name => #data_privacy_path::DataClass::new(#taxonomy_name, #snake_case_variant_name)
         });
     }
 
@@ -267,7 +258,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
     reason = "this is documented in the data-privacy reexport"
 )]
 #[proc_macro_attribute]
-#[mutants::skip]
+#[cfg_attr(test, mutants::skip)]
 pub fn taxonomy(
     attr_args: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
@@ -395,7 +386,7 @@ mod tests {
         let err = result.unwrap_err();
         assert!(
             err.to_string()
-                .contains("taxonomy attribute cannot be applied to generic enums")
+                .contains("the taxonomy attribute cannot be applied to generic enums")
         );
     }
 
@@ -413,7 +404,10 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("only supports unit variants"));
+        assert!(
+            err.to_string()
+                .contains("the taxonomy attribute only supports unit variants")
+        );
     }
 
     #[test]
@@ -430,7 +424,10 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("only supports unit variants"));
+        assert!(
+            err.to_string()
+                .contains("the taxonomy attribute only supports unit variants")
+        );
     }
 
     #[test]

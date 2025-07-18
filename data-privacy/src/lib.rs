@@ -41,7 +41,7 @@
 //!   explicit mechanisms to access the data in a safe and auditable way.
 //!
 //! * The [`Redactor`] trait defines the logic needed by an individual redactor. This crate provides a
-//!   few implementations of this trait, such as [`SimpleRedactor`] and [`xxH3Redactor`], but others can
+//!   few implementations of this trait, such as [`SimpleRedactor`], but others can
 //!   be implemented and used by applications as well.
 //!
 //! # Data Classes
@@ -100,7 +100,10 @@
 //!     // doesn't compile since `Sensitive` doesn't implement `Display`
 //!     // println!("Name: {}", person.name);
 //!
-//!    // extract the data from the `Sensitive` type
+//!     // outputs: Name: <core/sensitive:REDACTED>"
+//!     println!("Name: {:?}", person.name);
+//!
+//!    // extract the data from the `Sensitive` type and outputs: Name: John Doe
 //!    let name = person.name.declassify();
 //!    println!("Name: {name}");
 //! }

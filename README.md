@@ -119,6 +119,9 @@ fn try_out() {
     // doesn't compile since `Sensitive` doesn't implement `Display`
     // println!("Name: {}", person.name);
 
+    // outputs: Name: <core/sensitive:REDACTED>"
+    println!("Name: {:?}", person.name);
+ 
    // extract the data from the `Sensitive` type
    let name = person.name.declassify();
    println!("Name: {name}");

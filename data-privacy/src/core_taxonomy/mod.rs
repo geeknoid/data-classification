@@ -19,3 +19,41 @@ pub enum CoreTaxonomy {
     /// A data class to indicate some data has an unknown classification.
     UnknownSensitivity,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::DataClass;
+
+    #[test]
+    fn test_core_taxonomy() {
+        assert_eq!(
+            CoreTaxonomy::Sensitive.data_class(),
+            DataClass::new("core", "sensitive")
+        );
+        assert_eq!(
+            CoreTaxonomy::Insensitive.data_class(),
+            DataClass::new("core", "insensitive")
+        );
+        assert_eq!(
+            CoreTaxonomy::UnknownSensitivity.data_class(),
+            DataClass::new("core", "unknown_sensitivity")
+        );
+    }
+
+    #[test]
+    fn test_debug_trait() {
+        assert_eq!(
+            format!("{:?}", Sensitive::new(2)),
+            "<core/sensitive:REDACTED>"
+        );
+        assert_eq!(
+            format!("{:?}", Insensitive::new("Hello")),
+            "<core/insensitive:REDACTED>"
+        );
+        assert_eq!(
+            format!("{:?}", UnknownSensitivity::new(31.4)),
+            "<core/unknown_sensitivity:REDACTED>"
+        );
+    }
+}
