@@ -19,10 +19,15 @@ proc-macro-crate = "3.3.0"
 proc-macro2 = "1.0.95"
 quote = "1.0.40"
 syn = { version = "2.0.104", default-features = false, features = ["derive", "parsing", "printing"] }
+prettyplease = "0.2.35"
 
 [dev-dependencies]
 syn = { version = "2.0.104" }
 mutants = { version = "0.0.3" }
+insta = "1.43.1"
+
+[build-dependencies]
+prettyplease = "0.2.35"
 
 [lints]
 workspace = true

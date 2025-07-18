@@ -56,6 +56,9 @@
 //! using the [`taxonomy`] attribute. See the documentation for the attribute to learn how you define your own
 //! taxonomy and all its data classes.
 //!
+//! Classified containers implement the [`Debug`] trait if the data they hold implements the trait. However,
+//! the data produced by the `Debug` trait is redacted, so it does not accidentally expose the sensitive data.
+//!
 //! Applications use the classified container types around application
 //! data types to indicate instances of those types hold sensitive data. Although applications typically
 //! define their own taxonomies of data classes, this crate defines three well-known data classes:

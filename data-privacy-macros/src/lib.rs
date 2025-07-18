@@ -271,6 +271,7 @@ pub fn taxonomy(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::assert_snapshot;
 
     #[test]
     fn test_pascal_to_snake_case() {
@@ -462,5 +463,22 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!("expected `=`", err.to_string());
+    }
+
+    #[test]
+    fn test_success() {
+        let args = quote! { tax, serde = true };
+        let input = quote! {
+            enum GovTaxonomy {
+                Confidential,
+                TopSecret,
+            }
+        };
+
+        let result = taxonomy_impl(args, input);
+        let result_file = syn::parse_file(&result.unwrap().to_string()).unwrap();
+        let pretty = prettyplease::unparse(&result_file);
+
+        assert_snapshot!(pretty);
     }
 }

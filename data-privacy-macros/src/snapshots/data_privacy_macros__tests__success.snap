@@ -1,0 +1,179 @@
+---
+source: data-privacy-macros/src/lib.rs
+assertion_line: 482
+expression: pretty
+---
+enum GovTaxonomy {
+    Confidential,
+    TopSecret,
+}
+impl GovTaxonomy {
+    /// Returns the data class associated with the current variant.
+    #[must_use]
+    pub fn data_class(&self) -> crate::DataClass {
+        match self {
+            GovTaxonomy::Confidential => crate::DataClass::new("tax", "confidential"),
+            GovTaxonomy::TopSecret => crate::DataClass::new("tax", "top_secret"),
+        }
+    }
+}
+#[doc = concat!(
+    "A classified data container for the `", "confidential", "` class of the `", "tax",
+    "` taxonomy."
+)]
+#[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
+struct Confidential<T> {
+    payload: T,
+}
+impl<T> Confidential<T> {
+    /// Creates a new instance of the classified data container.
+    #[must_use]
+    pub fn new(payload: T) -> Self {
+        Self { payload }
+    }
+    /// Exfiltrates the payload, allowing it to be used outside the classified context.
+    ///
+    /// Exfiltration should be done with caution, as it may expose sensitive information.
+    ///
+    /// # Returns
+    /// The original payload.
+    #[must_use]
+    pub fn declassify(self) -> T {
+        self.payload
+    }
+    /// Returns the data class of the payload.
+    #[must_use]
+    pub const fn data_class() -> crate::DataClass {
+        crate::DataClass::new("tax", "confidential")
+    }
+}
+impl<T> crate::Classified<T> for Confidential<T> {
+    fn declassify(self) -> T {
+        Confidential::declassify(self)
+    }
+    fn visit(&self, operation: impl FnOnce(&T)) {
+        operation(&self.payload);
+    }
+    fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
+        operation(&mut self.payload);
+    }
+    fn data_class() -> crate::DataClass {
+        Self::data_class()
+    }
+}
+impl<T> core::fmt::Debug for Confidential<T>
+where
+    T: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(::core::format_args!("<{}/{}:REDACTED>", "tax", "confidential"))
+    }
+}
+impl<T> core::convert::From<T> for Confidential<T> {
+    fn from(payload: T) -> Self {
+        Self::new(payload)
+    }
+}
+impl<'a, T> serde::Deserialize<'a> for Confidential<T>
+where
+    T: serde::Deserialize<'a>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'a>,
+    {
+        let payload = T::deserialize(deserializer)?;
+        core::result::Result::Ok(Self::new(payload))
+    }
+}
+impl<T> serde::Serialize for Confidential<T>
+where
+    T: serde::Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.payload.serialize(serializer)
+    }
+}
+#[doc = concat!(
+    "A classified data container for the `", "top_secret", "` class of the `", "tax",
+    "` taxonomy."
+)]
+#[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
+struct TopSecret<T> {
+    payload: T,
+}
+impl<T> TopSecret<T> {
+    /// Creates a new instance of the classified data container.
+    #[must_use]
+    pub fn new(payload: T) -> Self {
+        Self { payload }
+    }
+    /// Exfiltrates the payload, allowing it to be used outside the classified context.
+    ///
+    /// Exfiltration should be done with caution, as it may expose sensitive information.
+    ///
+    /// # Returns
+    /// The original payload.
+    #[must_use]
+    pub fn declassify(self) -> T {
+        self.payload
+    }
+    /// Returns the data class of the payload.
+    #[must_use]
+    pub const fn data_class() -> crate::DataClass {
+        crate::DataClass::new("tax", "top_secret")
+    }
+}
+impl<T> crate::Classified<T> for TopSecret<T> {
+    fn declassify(self) -> T {
+        TopSecret::declassify(self)
+    }
+    fn visit(&self, operation: impl FnOnce(&T)) {
+        operation(&self.payload);
+    }
+    fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
+        operation(&mut self.payload);
+    }
+    fn data_class() -> crate::DataClass {
+        Self::data_class()
+    }
+}
+impl<T> core::fmt::Debug for TopSecret<T>
+where
+    T: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(::core::format_args!("<{}/{}:REDACTED>", "tax", "top_secret"))
+    }
+}
+impl<T> core::convert::From<T> for TopSecret<T> {
+    fn from(payload: T) -> Self {
+        Self::new(payload)
+    }
+}
+impl<'a, T> serde::Deserialize<'a> for TopSecret<T>
+where
+    T: serde::Deserialize<'a>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'a>,
+    {
+        let payload = T::deserialize(deserializer)?;
+        core::result::Result::Ok(Self::new(payload))
+    }
+}
+impl<T> serde::Serialize for TopSecret<T>
+where
+    T: serde::Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.payload.serialize(serializer)
+    }
+}
