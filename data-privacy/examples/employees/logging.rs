@@ -8,15 +8,36 @@ pub fn set_redaction_engine_for_logging(engine: RedactionEngine) {
     REDACTION_ENGINE.set(engine).unwrap();
 }
 
-pub fn classified_display<C, T>(value: &C) -> String
+pub struct Wrapper<'a, C, T> {
+    value: &'a C,
+    _marker: core::marker::PhantomData<T>,
+}
+
+impl<'a, C, T> Wrapper<'a, C, T> {
+    pub const fn new(value: &'a C) -> Self {
+        Self {
+            value,
+            _marker: core::marker::PhantomData,
+        }
+    }
+}
+
+impl<C, T> Display for Wrapper<'_, C, T>
 where
     C: Classified<T>,
     T: Display,
 {
-    let engine = REDACTION_ENGINE.get().unwrap();
-    let mut output = String::new();
-    engine.display_redacted(value, |s| output.push_str(s));
-    output
+    #[expect(
+        clippy::unwrap_in_result,
+        reason = "This is a demo app, so we expect the redaction engine to be set up correctly."
+    )]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let engine = REDACTION_ENGINE.get().unwrap();
+        engine.display_redacted(self.value, |s| {
+            _ = f.write_str(s);
+        });
+        Ok(())
+    }
 }
 
 macro_rules! log {
@@ -29,7 +50,7 @@ macro_rules! log {
     };
 
     (@fmt ($name:ident):@ = $value:expr) => {
-        format!("{}={}", stringify!($name), crate::logging::classified_display(&$value))
+        format!("{}={}", stringify!($name), crate::logging::Wrapper::new(&$value))
     };
 
     ($($name:ident $(: $kind:tt)? = $value:expr),* $(,)?) => {

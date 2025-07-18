@@ -3,6 +3,8 @@ use crate::{Classified, DataClass};
 use core::fmt::Debug;
 use core::fmt::Display;
 use std::collections::HashMap;
+use std::io::Cursor;
+use std::io::Write;
 
 /// Lets you apply redaction to classified data.
 ///
@@ -72,24 +74,70 @@ impl RedactionEngine {
     ///
     /// Given a classified value whose payload implements the [`Debug`] trait, this method will
     /// redact the output of that trait using the redactor registered for the data class of the value.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "Converting from u64 to usize, value is known to be <= 128"
+    )]
     pub fn debug_redacted<C, T>(&self, value: &C, output: impl FnMut(&str))
     where
         C: Classified<T>,
         T: Debug,
     {
-        value.visit(|v| self.redact(&C::data_class(), format!("{v:?}"), output));
+        value.visit(|v| {
+            let mut local_buf = [0u8; 128];
+            let (written, amount) = {
+                let mut cursor = Cursor::new(&mut local_buf[..]);
+                (
+                    write!(&mut cursor, "{v:?}").is_ok(),
+                    cursor.position() as usize,
+                )
+            };
+
+            if written {
+                // SAFETY: We know the buffer contains valid UTF-8 because the Debug impl can only write valid UTF-8.
+                let s = unsafe { core::str::from_utf8_unchecked(&local_buf[..amount]) };
+
+                self.redact(&C::data_class(), s, output);
+            } else {
+                // If the value is too large to fit in the buffer, we fall back to using the debug format directly.
+                self.redact(&C::data_class(), format!("{v:?}"), output);
+            }
+        });
     }
 
     /// Redacts the output of a classified value's [`Display`] trait.
     ///
     /// Given a classified value whose payload implements the [`Display`] trait, this method will
     /// redact the output of that trait using the redactor registered for the data class of the value.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "Converting from u64 to usize, value is known to be <= 128"
+    )]
     pub fn display_redacted<C, T>(&self, value: &C, output: impl FnMut(&str))
     where
         C: Classified<T>,
         T: Display,
     {
-        value.visit(|v| self.redact(&C::data_class(), format!("{v}"), output));
+        value.visit(|v| {
+            let mut local_buf = [0u8; 128];
+            let (written, amount) = {
+                let mut cursor = Cursor::new(&mut local_buf[..]);
+                (
+                    write!(&mut cursor, "{v}").is_ok(),
+                    cursor.position() as usize,
+                )
+            };
+
+            if written {
+                // SAFETY: We know the buffer contains valid UTF-8 because the Debug impl can only write valid UTF-8.
+                let s = unsafe { core::str::from_utf8_unchecked(&local_buf[..amount]) };
+
+                self.redact(&C::data_class(), s, output);
+            } else {
+                // If the value is too large to fit in the buffer, we fall back to using the debug format directly.
+                self.redact(&C::data_class(), format!("{v}"), output);
+            }
+        });
     }
 
     /// Redacts a string with an explicit data classification, sending the results to the output callback.
@@ -495,5 +543,34 @@ mod tests {
         let fallback_result = collect_output(&engine, &unknown_data);
         // For Insert mode, the output is always "REDACTED" regardless of input
         assert_eq!(fallback_result, "REDACTED");
+    }
+
+    #[test]
+    fn test_long_strings() {
+        let engine = RedactionEngineBuilder::new()
+            .add_class_redactor(
+                &CoreTaxonomy::Sensitive.data_class(),
+                SimpleRedactor::with_mode(SimpleRedactorMode::PassthroughAndTag),
+            )
+            .build();
+
+        let long_string = "a".repeat(148);
+        let classified_long_string: Sensitive<String> = long_string.clone().into();
+
+        let mut output_buffer = String::new();
+        engine.debug_redacted(&classified_long_string, |s| {
+            output_buffer.push_str(s);
+        });
+
+        let expected_debug_output = format!("<core/sensitive:\"{long_string}\">");
+        assert_eq!(output_buffer, expected_debug_output);
+
+        output_buffer.clear();
+        engine.display_redacted(&classified_long_string, |s| {
+            output_buffer.push_str(s);
+        });
+
+        let expected_display_output = format!("<core/sensitive:{long_string}>");
+        assert_eq!(output_buffer, expected_display_output);
     }
 }
