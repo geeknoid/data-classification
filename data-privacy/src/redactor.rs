@@ -16,14 +16,14 @@ pub trait Redactor {
 
 #[cfg(test)]
 mod tests {
-    use crate::core_taxonomy::CoreTaxonomy::Sensitive;
     use super::*;
+    use crate::core_taxonomy::CoreTaxonomy::Sensitive;
 
     struct TestRedactor;
 
     impl Redactor for TestRedactor {
         fn redact(&self, _data_class: &DataClass, value: &str, output: &mut dyn FnMut(&str)) {
-            output(value);
+            output(&(value.to_string() + "tomato"));
         }
     }
 
@@ -34,6 +34,8 @@ mod tests {
         redactor.redact(&Sensitive.data_class(), "test_value", &mut |s| {
             output_buffer.push_str(s);
         });
+
         assert_eq!(redactor.exact_len(), None);
+        assert_eq!(output_buffer, "test_valuetomato");
     }
 }

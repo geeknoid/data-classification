@@ -35,7 +35,7 @@ mod employee;
 mod example_taxonomy;
 mod logging;
 
-use data_privacy::{RedactionEngineBuilder, xxH3Redactor};
+use data_privacy::{RedactionEngineBuilder, SimpleRedactor, SimpleRedactorMode};
 use employee::Employee;
 use example_taxonomy::{
     ExampleTaxonomy, OrganizationallyIdentifiableInformation, PersonallyIdentifiableInformation,
@@ -57,13 +57,11 @@ fn main() {
     let engine = RedactionEngineBuilder::new()
         .add_class_redactor(
             &ExampleTaxonomy::PersonallyIdentifiableInformation.data_class(),
-            xxH3Redactor::with_secret(vec![0; 192]),
+            SimpleRedactor::with_mode(SimpleRedactorMode::Replace('*')),
         )
         .add_class_redactor(
             &ExampleTaxonomy::OrganizationallyIdentifiableInformation.data_class(),
-            data_privacy::SimpleRedactor::with_mode(
-                data_privacy::SimpleRedactorMode::PassthroughAndTag,
-            ),
+            SimpleRedactor::with_mode(SimpleRedactorMode::PassthroughAndTag),
         )
         .build();
 

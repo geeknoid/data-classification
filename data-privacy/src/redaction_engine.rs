@@ -376,6 +376,35 @@ mod tests {
     }
 
     #[test]
+    fn test_simple() {
+        let person = Person {
+            name: "John Doe".to_string().into(),
+        };
+
+        let tagging_redactor = SimpleRedactor::with_mode(SimpleRedactorMode::PassthroughAndTag);
+        let erasing_redactor = SimpleRedactor::with_mode(SimpleRedactorMode::Erase);
+
+        let engine = RedactionEngineBuilder::new()
+            .add_class_redactor(&CoreTaxonomy::Sensitive.data_class(), tagging_redactor)
+            .set_fallback_redactor(erasing_redactor)
+            .build();
+
+        let mut output_buffer = String::new();
+
+        engine.display_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
+
+        assert_eq!(
+            None,
+            engine.exact_len(&CoreTaxonomy::Sensitive.data_class())
+        );
+        assert_eq!(output_buffer, "<core/sensitive:John Doe>");
+
+        output_buffer.clear();
+        engine.debug_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
+        assert_eq!(output_buffer, "<core/sensitive:\"John Doe\">");
+    }
+
+    #[test]
     fn test_debug_trait_implementation() {
         let asterisk_redactor = create_test_redactor(SimpleRedactorMode::Replace('*'));
         let hash_redactor = create_test_redactor(SimpleRedactorMode::Replace('#'));
