@@ -369,6 +369,10 @@ mod tests {
             engine.exact_len(&CoreTaxonomy::Sensitive.data_class())
         );
         assert_eq!(output_buffer, "********");
+
+        output_buffer.clear();
+        engine.debug_redacted(&person.name, |s| output_buffer.write_str(s).unwrap());
+        assert_eq!(output_buffer, "**********");
     }
 
     #[test]

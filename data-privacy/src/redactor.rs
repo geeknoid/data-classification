@@ -16,6 +16,7 @@ pub trait Redactor {
 
 #[cfg(test)]
 mod tests {
+    use crate::core_taxonomy::CoreTaxonomy::Sensitive;
     use super::*;
 
     struct TestRedactor;
@@ -29,6 +30,10 @@ mod tests {
     #[test]
     fn test_exact_len_default_behavior() {
         let redactor = TestRedactor;
+        let mut output_buffer = String::new();
+        redactor.redact(&Sensitive.data_class(), "test_value", &mut |s| {
+            output_buffer.push_str(s);
+        });
         assert_eq!(redactor.exact_len(), None);
     }
 }
