@@ -23,7 +23,7 @@ serde = {  version = "1.0.219", features = ["derive", "std"] }
 serde_json = "1.0.140"
 
 [features]
-default = ["serde"]
+default = ["serde", "xxh3"]
 serde = ["dep:serde"]
 xxh3 = ["dep:xxhash-rust"]
 

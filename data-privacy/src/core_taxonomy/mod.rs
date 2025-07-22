@@ -7,16 +7,16 @@ use data_privacy_macros::taxonomy;
 #[cfg_attr(not(feature = "serde"), taxonomy(core, serde = false))]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum CoreTaxonomy {
-    /// General-purpose data class to indicate that data must be treated carefully.
+    /// The `sensitive` data class indicates data must be treated carefully.
     ///
     /// This data class is typically used in libraries which are agnostic to a
     /// specific data taxonomy.
     Sensitive,
 
-    /// A data class to indicate that data is specifically not classified.
+    /// The `insensitive` data class indicates data is specifically not classified.
     Insensitive,
 
-    /// A data class to indicate some data has an unknown classification.
+    /// The `unknown_sensitivity` data class indicates data has an unknown classification.
     UnknownSensitivity,
 }
 

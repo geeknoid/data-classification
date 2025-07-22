@@ -1,9 +1,11 @@
 ---
 source: data-privacy-macros/src/lib.rs
-assertion_line: 482
+assertion_line: 494
 expression: pretty
 ---
 enum GovTaxonomy {
+    #[doc("Really secret data")]
+    #[doc("More secret data")]
     Confidential,
     TopSecret,
 }
@@ -21,6 +23,9 @@ impl GovTaxonomy {
     "A classified data container for the `", "confidential", "` class of the `", "tax",
     "` taxonomy."
 )]
+///
+#[doc("Really secret data")]
+#[doc("More secret data")]
 #[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 struct Confidential<T> {
     payload: T,
@@ -57,7 +62,7 @@ impl<T> crate::Classified<T> for Confidential<T> {
     fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
         operation(&mut self.payload);
     }
-    fn data_class() -> crate::DataClass {
+    fn data_class(&self) -> crate::DataClass {
         Self::data_class()
     }
 }
@@ -101,6 +106,7 @@ where
     "A classified data container for the `", "top_secret", "` class of the `", "tax",
     "` taxonomy."
 )]
+///
 #[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 struct TopSecret<T> {
     payload: T,
@@ -137,7 +143,7 @@ impl<T> crate::Classified<T> for TopSecret<T> {
     fn visit_mut(&mut self, operation: impl FnOnce(&mut T)) {
         operation(&mut self.payload);
     }
-    fn data_class() -> crate::DataClass {
+    fn data_class(&self) -> crate::DataClass {
         Self::data_class()
     }
 }

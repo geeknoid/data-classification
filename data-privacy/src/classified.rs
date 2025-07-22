@@ -46,7 +46,7 @@ use crate::DataClass;
 ///         operation(&mut self.person);
 ///     }
 ///
-///     fn data_class() -> DataClass {
+///     fn data_class(&self) -> DataClass {
 ///         DataClass::new("example_taxonomy", "classified_person")
 ///     }
 /// }
@@ -69,5 +69,5 @@ pub trait Classified<T> {
 
     /// Returns the data class of the classified data.
     #[must_use]
-    fn data_class() -> DataClass;
+    fn data_class(&self) -> DataClass;
 }

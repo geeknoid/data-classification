@@ -97,10 +97,10 @@ impl RedactionEngine {
                 // SAFETY: We know the buffer contains valid UTF-8 because the Debug impl can only write valid UTF-8.
                 let s = unsafe { core::str::from_utf8_unchecked(&local_buf[..amount]) };
 
-                self.redact(&C::data_class(), s, output);
+                self.redact(&value.data_class(), s, output);
             } else {
                 // If the value is too large to fit in the buffer, we fall back to using the debug format directly.
-                self.redact(&C::data_class(), format!("{v:?}"), output);
+                self.redact(&value.data_class(), format!("{v:?}"), output);
             }
         });
     }
@@ -132,10 +132,10 @@ impl RedactionEngine {
                 // SAFETY: We know the buffer contains valid UTF-8 because the Debug impl can only write valid UTF-8.
                 let s = unsafe { core::str::from_utf8_unchecked(&local_buf[..amount]) };
 
-                self.redact(&C::data_class(), s, output);
+                self.redact(&value.data_class(), s, output);
             } else {
                 // If the value is too large to fit in the buffer, we fall back to using the debug format directly.
-                self.redact(&C::data_class(), format!("{v}"), output);
+                self.redact(&value.data_class(), format!("{v}"), output);
             }
         });
     }

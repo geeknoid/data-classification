@@ -130,6 +130,11 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
         let variant_name = &variant.ident;
         let variant_name_str = variant_name.to_string();
         let snake_case_variant_name = pascal_to_snake_case(&variant_name_str);
+        let variant_docs = variant
+            .attrs
+            .iter()
+            .filter(|attr| attr.path().is_ident("doc"));
+        //            .map(|attr| attr.parse_args::<Expr>().unwrap());
 
         let serde_impls = if macro_args.generate_serde {
             quote! {
@@ -165,6 +170,11 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
         let taxonomy_name = macro_args.taxonomy_name.to_string();
         variant_structs.push(quote! {
             #[doc = concat!("A classified data container for the `", #snake_case_variant_name, "` class of the `", #taxonomy_name, "` taxonomy.")]
+            #[doc = ""]
+            #(
+                #variant_docs
+            )*
+
             #[derive(Clone, Default, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
             #enum_vis struct #variant_name<T> {
                 payload: T,
@@ -208,7 +218,7 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
                     operation(&mut self.payload);
                 }
 
-                fn data_class() -> #data_privacy_path::DataClass {
+                fn data_class(&self) -> #data_privacy_path::DataClass {
                     Self::data_class()
                 }
             }
@@ -470,6 +480,8 @@ mod tests {
         let args = quote! { tax, serde = true };
         let input = quote! {
             enum GovTaxonomy {
+                #[doc("Really secret data")]
+                #[doc("More secret data")]
                 Confidential,
                 TopSecret,
             }
