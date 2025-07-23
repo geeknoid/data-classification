@@ -1,6 +1,6 @@
 ---
 source: data-privacy-macros/src/lib.rs
-assertion_line: 494
+assertion_line: 493
 expression: pretty
 ---
 enum GovTaxonomy {

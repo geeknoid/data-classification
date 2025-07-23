@@ -134,7 +134,6 @@ fn taxonomy_impl(attr_args: TokenStream, item: TokenStream) -> SynResult<TokenSt
             .attrs
             .iter()
             .filter(|attr| attr.path().is_ident("doc"));
-        //            .map(|attr| attr.parse_args::<Expr>().unwrap());
 
         let serde_impls = if macro_args.generate_serde {
             quote! {

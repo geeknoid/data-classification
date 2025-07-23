@@ -1,7 +1,6 @@
 use crate::DataClass;
 use crate::Redactor;
 use xxhash_rust::xxh3::xxh3_64_with_secret;
-use std::io::{Cursor, Write};
 
 const REDACTED_LEN: usize = 16;
 
